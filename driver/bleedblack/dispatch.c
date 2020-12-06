@@ -1,6 +1,7 @@
 #include "common.h"
 #include "dispatch.h"
 #include "ps.h"
+#include <bleedblack.h>
 #pragma warning(disable: 28252 28253)
 
 _Dispatch_type_(IRP_MJ_DEVICE_CONTROL)
@@ -11,14 +12,14 @@ NTSTATUS Dispatch(
 {
 	UNREFERENCED_PARAMETER(DeviceObject);
 
-	NTSTATUS status;
+	NTSTATUS Status;
 	ULONG ReturnLength;
-	//PVOID buffer;
-
-	const PIO_STACK_LOCATION ioStack = IoGetCurrentIrpStackLocation(Irp);
-	const ULONG ioControlCode = ioStack->Parameters.DeviceIoControl.IoControlCode;
+	PVOID Buffer;
+	
+	const PIO_STACK_LOCATION IoStack = IoGetCurrentIrpStackLocation(Irp);
+	const ULONG IoControlCode = IoStack->Parameters.DeviceIoControl.IoControlCode;
 	//const ULONG outputBufferLength = ioStack->Parameters.DeviceIoControl.OutputBufferLength;
-	//const ULONG inputBufferLength = ioStack->Parameters.DeviceIoControl.InputBufferLength;
+	const ULONG inputBufferLength = IoStack->Parameters.DeviceIoControl.InputBufferLength;
 	ReturnLength = 0;
 
 	//
@@ -27,25 +28,39 @@ NTSTATUS Dispatch(
 	PEPROCESS Process = IoGetRequestorProcess(Irp);
 	if (PsGetProcessWow64Process(Process) != NULL)
 	{
-		status = STATUS_INVALID_IMAGE_FORMAT;
+		Status = STATUS_INVALID_IMAGE_FORMAT;
 		goto ControlEnd;
 	}
 
-	switch (ioControlCode)
+	switch (IoControlCode)
 	{
+	case IOCTL_MOVE_MOUSE:
+		Buffer = Irp->AssociatedIrp.SystemBuffer;
+
+		if(Buffer && inputBufferLength == sizeof(BLEEDBLACK_MOVE_MOUSE))
+		{
+			// TODO
+			Status = STATUS_NOT_IMPLEMENTED;
+		}
+		else
+		{
+			Status = STATUS_INVALID_DEVICE_REQUEST;
+		}
+
+		break;
 	default:
 		//
 		// The specified I/O control code is unrecognized by this driver.
 		//
 		KdPrint(("[%s] Invalid request 0x%X", MODULE_NAME, ioStack->Parameters.DeviceIoControl.IoControlCode));
-		status = STATUS_INVALID_DEVICE_REQUEST;
+		Status = STATUS_INVALID_DEVICE_REQUEST;
 	}
 
 	ControlEnd:
-	Irp->IoStatus.Status = status;
+	Irp->IoStatus.Status = Status;
 	Irp->IoStatus.Information = ReturnLength;
 	IofCompleteRequest(Irp, IO_NO_INCREMENT);
-	return status;
+	return Status;
 }
 
 _Dispatch_type_(IRP_MJ_CREATE)

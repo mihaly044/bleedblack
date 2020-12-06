@@ -7,6 +7,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "driver", "driver", "{B1E66E
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bleedblack", "driver\bleedblack\bleedblack.vcxproj", "{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{8DE92034-5033-4BA1-8CB6-697087592677}"
+	ProjectSection(SolutionItems) = preProject
+		bleedblack.h = bleedblack.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
