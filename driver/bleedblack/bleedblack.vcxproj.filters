@@ -18,13 +18,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="bleedblack.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="dispatch.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="input.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

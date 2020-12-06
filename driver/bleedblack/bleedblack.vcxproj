@@ -140,7 +140,7 @@
     <FilesToPackage Include="$(TargetPath)" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="bleedblack.c" />
+    <ClCompile Include="main.c" />
     <ClCompile Include="dispatch.c" />
     <ClCompile Include="input.c" />
   </ItemGroup>
