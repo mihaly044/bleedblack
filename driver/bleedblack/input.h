@@ -12,5 +12,9 @@ typedef struct _DPC_CONTEXT
     ULONG           Consumed;
 } DPC_CONTEXT, *PDPC_CONTEXT;
 
-NTSTATUS InitializeDevice();
-NTSTATUS CallService(PVOID Input, PVOID InputEnd, UINT32* Consumed);
+NTSTATUS InitializeDevice(VOID);
+NTSTATUS CallService(
+    _In_ PVOID Input, 
+    _In_ PVOID InputEnd,
+    _Out_opt_ UINT32* Consumed
+);

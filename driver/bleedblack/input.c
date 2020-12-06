@@ -1,7 +1,6 @@
 #include "input.h"
 #include "ob.h"
 #include <kbdmou.h>
-#pragma warning(disable: 4996)
 
 //#define U_KBD_HID L"\\Driver\\kbdhid"
 //#define U_KDB_CLASS L"\\Driver\\kbdclass"
@@ -11,7 +10,7 @@
 PDEVICE_OBJECT g_ClassDeviceObject = NULL;
 PVOID g_ClassService = NULL;
 
-NTSTATUS InitializeDevice()
+NTSTATUS InitializeDevice(VOID)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	UNICODE_STRING DeviceName;
@@ -117,7 +116,11 @@ VOID DpcDeferredRoutine(PKDPC Dpc, PVOID Context, PVOID Arg1, PVOID Arg2)
 	KeSetEvent(&DpcContext->Event, IO_MOUSE_INCREMENT, FALSE);
 }
 
-NTSTATUS CallService(PVOID Input, PVOID InputEnd, UINT32* Consumed)
+NTSTATUS CallService(
+	_In_ PVOID Input,
+	_In_ PVOID InputEnd,
+	_Out_opt_ UINT32* Consumed
+)
 {
 	NTSTATUS status = STATUS_SUCCESS;
 	PDPC_CONTEXT Context = NULL;

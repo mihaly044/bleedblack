@@ -24,14 +24,22 @@ NTSTATUS DriverEntry(
 		0,
 		&g_uszDeviceName,
 		FILE_DEVICE_UNKNOWN,
-		0,
-		TRUE,
+		FILE_DEVICE_SECURE_OPEN,
+		FALSE,
 		&DeviceObject);
 	if (!NT_SUCCESS(Status))
 	{
 		KdPrint(("[%s] failed to create device: 0x%08X\n", MODULE_NAME, Status));
 		return Status;
 	}
+
+	Status = IoCreateSymbolicLink(&g_uszSymlink, &g_uszDeviceName);
+	if (!NT_SUCCESS(Status)) {
+		KdPrint(("[%s] Failed to create symbolic link 0x%08X\n", MODULE_NAME, Status));
+		IoDeleteDevice(DeviceObject);
+		return Status;
+	}
+
 
 	DeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
 	DeviceObject->Flags |= DO_DIRECT_IO;

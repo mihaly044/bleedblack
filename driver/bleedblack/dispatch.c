@@ -2,6 +2,9 @@
 #include "dispatch.h"
 #include "ps.h"
 #include <bleedblack.h>
+#include <ntddmou.h>
+#include "input.h"
+
 #pragma warning(disable: 28252 28253)
 
 _Dispatch_type_(IRP_MJ_DEVICE_CONTROL)
@@ -15,7 +18,7 @@ NTSTATUS Dispatch(
 	NTSTATUS Status;
 	ULONG ReturnLength;
 	PVOID Buffer;
-	
+
 	const PIO_STACK_LOCATION IoStack = IoGetCurrentIrpStackLocation(Irp);
 	const ULONG IoControlCode = IoStack->Parameters.DeviceIoControl.IoControlCode;
 	//const ULONG outputBufferLength = ioStack->Parameters.DeviceIoControl.OutputBufferLength;
@@ -36,11 +39,24 @@ NTSTATUS Dispatch(
 	{
 	case IOCTL_MOVE_MOUSE:
 		Buffer = Irp->AssociatedIrp.SystemBuffer;
-
-		if(Buffer && inputBufferLength == sizeof(BLEEDBLACK_MOVE_MOUSE))
+		
+		if(Buffer && inputBufferLength == sizeof(BLEEDLBACK_MOUSE_MOVEMENT_INPUT))
 		{
-			// TODO
-			Status = STATUS_NOT_IMPLEMENTED;
+			PMOUSE_INPUT_DATA InputData = (PMOUSE_INPUT_DATA)ExAllocatePool(NonPagedPool, sizeof(MOUSE_INPUT_DATA));
+			PBLEEDLBACK_MOUSE_MOVEMENT_INPUT InputRequest = (PBLEEDLBACK_MOUSE_MOVEMENT_INPUT)Buffer;
+			
+			if(!InputData)
+			{
+				Status = STATUS_INSUFFICIENT_RESOURCES;
+				break;
+			}
+
+			InputData->Flags = InputRequest->IndicatorFlags;
+			InputData->LastX = InputRequest->MovementX;
+			InputData->LastY = InputRequest->MovementY;
+			
+			Status = CallService(InputData, InputData + 1, NULL);
+			ReturnLength = sizeof(PMOUSE_INPUT_DATA);
 		}
 		else
 		{
@@ -52,7 +68,7 @@ NTSTATUS Dispatch(
 		//
 		// The specified I/O control code is unrecognized by this driver.
 		//
-		KdPrint(("[%s] Invalid request 0x%X", MODULE_NAME, ioStack->Parameters.DeviceIoControl.IoControlCode));
+		KdPrint(("[%s] Invalid request 0x%X", MODULE_NAME, IoStack->Parameters.DeviceIoControl.IoControlCode));
 		Status = STATUS_INVALID_DEVICE_REQUEST;
 	}
 
