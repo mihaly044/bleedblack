@@ -5,7 +5,7 @@ VisualStudioVersion = 16.0.30717.126
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "driver", "driver", "{B1E66E62-8E97-49C3-8A6A-328714ED5511}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bleedblack", "bleedblack\bleedblack.vcxproj", "{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bleedblack", "driver\bleedblack\bleedblack.vcxproj", "{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
