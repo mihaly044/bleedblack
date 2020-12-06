@@ -3,8 +3,8 @@
 #include <kbdmou.h>
 #pragma warning(disable: 4996)
 
-#define U_KBD_HID L"\\Driver\\kbdhid"
-#define U_KDB_CLASS L"\\Driver\\kbdclass"
+//#define U_KBD_HID L"\\Driver\\kbdhid"
+//#define U_KDB_CLASS L"\\Driver\\kbdclass"
 #define U_MOUSE_HID L"\\Driver\\mouhid"
 #define U_MOUSE_CLASS L"\\Driver\\mouclass"
 
@@ -128,7 +128,6 @@ NTSTATUS CallService(PVOID Input, PVOID InputEnd, UINT32* Consumed)
 		if (!Context)
 		{
 			return STATUS_INSUFFICIENT_RESOURCES;
-			break;
 		}
 
 		Context->Callback = g_ClassService;
