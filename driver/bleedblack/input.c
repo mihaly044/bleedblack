@@ -7,8 +7,7 @@
 #define U_MOUSE_HID L"\\Driver\\mouhid"
 #define U_MOUSE_CLASS L"\\Driver\\mouclass"
 
-PDEVICE_OBJECT g_ClassDeviceObject = NULL;
-PVOID g_ClassService = NULL;
+PBLEEDBLACK_CONTEXT g_Context;
 
 NTSTATUS InitializeDevice(VOID)
 {
@@ -19,6 +18,20 @@ NTSTATUS InitializeDevice(VOID)
 	PDRIVER_OBJECT ClassDriverObject = NULL;
 	PVOID ClassDriverStart = NULL;
 	PVOID ClassDriverEnd = NULL;
+
+	if(g_Context && g_Context->Initialized)
+	{
+		KdPrint(("[%s] Already initialized\n", MODULE_NAME));
+		return STATUS_ALREADY_INITIALIZED;
+	}
+
+	g_Context = ExAllocatePool(NonPagedPool, sizeof(BLEEDBLACK_CONTEXT));
+	if(!g_Context)
+	{
+		KdPrint(("[%s] Failed to allocate memory for context.\n", MODULE_NAME));
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+	RtlZeroMemory(g_Context, sizeof(BLEEDBLACK_CONTEXT));
 
 	RtlInitUnicodeString(&DeviceName, U_MOUSE_HID);
 	status = ObReferenceObjectByName(&DeviceName,
@@ -31,7 +44,7 @@ NTSTATUS InitializeDevice(VOID)
 		(PVOID*)&HidDriverObject);
 	if (!NT_SUCCESS(status))
 	{
-		KdPrint(("[%s] failed to reference device %wZ 0x%08X\n", MODULE_NAME, DeviceName, status));
+		KdPrint(("[%s] Failed to reference device %wZ 0x%08X\n", MODULE_NAME, DeviceName, status));
 		return status;
 	}
 
@@ -74,8 +87,9 @@ NTSTATUS InitializeDevice(VOID)
 					DeviceExtension[i + 1] > ClassDriverStart &&
 					DeviceExtension[i + 1] < ClassDriverEnd)
 				{
-					g_ClassDeviceObject = ClassDeviceObject;
-					g_ClassService = DeviceExtension[i + 1];
+					g_Context->ClassDeviceObject = ClassDeviceObject;
+					g_Context->ClassService = DeviceExtension[i + 1];
+					
 					status = STATUS_SUCCESS;
 					break;
 				}
@@ -133,8 +147,8 @@ NTSTATUS CallService(
 			return STATUS_INSUFFICIENT_RESOURCES;
 		}
 
-		Context->Callback = g_ClassService;
-		Context->Device = g_ClassDeviceObject;
+		Context->Callback = g_Context->ClassService;
+		Context->Device = g_Context->ClassDeviceObject;
 		Context->InputData = Input;
 		Context->InputDataEnd = InputEnd;
 		Context->Consumed = 0;
@@ -169,3 +183,10 @@ NTSTATUS CallService(
 	return status;
 }
 
+VOID ShutdownInput(VOID)
+{
+	if (g_Context)
+	{
+		ExFreePool(g_Context);
+	}
+}
