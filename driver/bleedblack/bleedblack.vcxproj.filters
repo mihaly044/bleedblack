@@ -18,16 +18,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="bleedblack.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="dispatch.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="bleedblack_internal.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="bleedblack.c">
+    <ClCompile Include="input.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -44,10 +41,7 @@
     <ClInclude Include="ob.h">
       <Filter>Header Files\Undocumented APIs</Filter>
     </ClInclude>
-    <ClInclude Include="bleedblack.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="bleedblack_internal.h">
+    <ClInclude Include="input.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

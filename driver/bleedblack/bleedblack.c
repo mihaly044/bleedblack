@@ -1,109 +1,71 @@
-#include "bleedblack.h"
-#include "bleedblack_internal.h"
-#pragma warning(disable: 4996)
+#include "common.h"
+#include "dispatch.h"
+#include "input.h"
+#include <ntddmou.h>
 
-PBLEEDBLACK_CONTEXT g_blContext = NULL;
+DRIVER_INITIALIZE DriverEntry;
+DRIVER_UNLOAD DriverUnload;
 
-NTSTATUS BleedBlack_Init()
+UNICODE_STRING g_uszDeviceName = RTL_CONSTANT_STRING(L"\\Device\\{E80A5F57-345E-4E03-9B1A-5DEB83174A8D}");
+UNICODE_STRING g_uszSymlink = RTL_CONSTANT_STRING(L"\\??\\{E80A5F57-345E-4E03-9B1A-5DEB83174A8D}");
+
+NTSTATUS DriverEntry(
+	_In_	PDRIVER_OBJECT DriverObject,
+	_In_	PUNICODE_STRING RegistryPath
+)
 {
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
+	UNREFERENCED_PARAMETER(RegistryPath);
 
-	if(g_blContext && g_blContext->Initialized)
+	KdPrint(("Loading %s\n", MODULE_NAME));
+	PDEVICE_OBJECT DeviceObject = NULL;
+	DriverObject->DriverUnload = DriverUnload;
+
+	NTSTATUS Status = IoCreateDevice(DriverObject,
+		0,
+		&g_uszDeviceName,
+		FILE_DEVICE_UNKNOWN,
+		0,
+		TRUE,
+		&DeviceObject);
+	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("[%s] Already initialized\n", MODULE_NAME));
-		status = STATUS_ALREADY_INITIALIZED;
-		return status;
+		KdPrint(("[%s] failed to create device: 0x%08X\n", MODULE_NAME, Status));
+		return Status;
 	}
 
-	g_blContext = ExAllocatePool(NonPagedPool, sizeof(BLEEDBLACK_CONTEXT));
-	if(!g_blContext)
+	DeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
+	DeviceObject->Flags |= DO_DIRECT_IO;
+	DriverObject->MajorFunction[IRP_MJ_CREATE] = GenericDispatch;
+	DriverObject->MajorFunction[IRP_MJ_CLOSE] = GenericDispatch;
+	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = Dispatch;
+
+	Status = InitializeDevice();
+	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("[%s] Failed to allocate space for g_blContext, 0x%08X\n", MODULE_NAME, status));
-		status = STATUS_INSUFFICIENT_RESOURCES;
-		return status;
+		KdPrint(("[%s] failed to init device: 0x%08X\n", MODULE_NAME, Status));
+		return Status;
 	}
 
-	status = ExInitializeResourceLite(&g_blContext->Resource);
-	if(!NT_SUCCESS(status))
+	MOUSE_INPUT_DATA Data;
+	RtlZeroMemory(&Data, sizeof(MOUSE_INPUT_DATA));
+	Data.LastX = 300;
+	Data.LastY = 300;
+	Status = CallService(&Data, &Data + 1, NULL);
+	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("[%s] Failed to initialize resource, 0x%08X\n", MODULE_NAME, status));
-		return status;
+		KdPrint(("[%s] CallService failed: 0x%08X\n", MODULE_NAME, Status));
+		return Status;
 	}
 
-	//ExEnterCriticalRegionAndAcquireResourceExclusive(&g_blContext->Resource);
-	//ExReleaseResourceAndLeaveCriticalRegion(&g_blContext->Resource);
-
-	status = BleedBlack_p_SetupMouClass();
-	if (!NT_SUCCESS(status))
-	{
-		KdPrint(("[%s] BleedBlack_p_SetupMouClass has failed with code 0x%08X\n", MODULE_NAME, status));
-		return status;
-	}
-
-	return status;
+	KdPrint(("Loaded %s\n", MODULE_NAME));
+	return Status;
 }
 
-
-NTSTATUS BleedBlack_CallService(
-	PVOID Input,
-	PVOID InputEnd,
-	UINT32* Consumed)
+VOID DriverUnload(
+	_In_ DRIVER_OBJECT* DriverObject)
 {
-	NTSTATUS status = STATUS_SUCCESS;
-	PDPC_CONTEXT Context = NULL;
-
-	for(;;)
-	{
-		Context = ExAllocatePool(NonPagedPool, sizeof(DPC_CONTEXT));
-		if (!Context)
-		{
-			return STATUS_INSUFFICIENT_RESOURCES;
-		}
-
-		Context->Callback = g_blContext->ClassService;
-		Context->Device = g_blContext->ClassDevice;
-		Context->InputData = Input;
-		Context->InputDataEnd = InputEnd;
-		Context->Consumed = 0;
-
-		KeInitializeEvent(&Context->Event, NotificationEvent, FALSE);
-		KeInitializeDpc(&Context->Dpc, (PKDEFERRED_ROUTINE)BleedBlack_p_DpcDeferredRoutine, Context);
-
-		if (!KeInsertQueueDpc(&Context->Dpc, NULL, NULL))
-		{
-			status = STATUS_INSUFFICIENT_RESOURCES;
-			break;
-		}
-
-		status = KeWaitForSingleObject(&Context->Event, Executive, KernelMode, FALSE, NULL);
-		if (!NT_SUCCESS(status))
-		{
-			break;
-		}
-
-		if (Consumed)
-		{
-			*Consumed = Context->Consumed;
-		}
-
-		break;
-	}
-
-	if (Context) {
-		ExFreePool(Context);
-	}
-
-	return status;
-}
-
-VOID BleedBlack_Shutdown()
-{
-	if (g_blContext)
-	{
-		if (g_blContext->ResourceAcquired)
-			ExReleaseResourceAndLeaveCriticalRegion(&g_blContext->Resource);
-
-		ExDeleteResourceLite(&g_blContext->Resource);
-		ExFreePool(g_blContext);
-	}
+	KdPrint(("Unloading %s\n", MODULE_NAME));
+	IoDeleteSymbolicLink(&g_uszSymlink);
+	IoDeleteDevice(DriverObject->DeviceObject);
+	KdPrint(("Unloaded %s\n", MODULE_NAME));
 }

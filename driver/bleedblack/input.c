@@ -1,16 +1,26 @@
-#include "bleedblack_internal.h"
+#include "input.h"
 #include "ob.h"
 #include <kbdmou.h>
+#pragma warning(disable: 4996)
 
-NTSTATUS BleedBlack_p_SetupMouClass()
+//#define U_KBD_HID L"\\Driver\\kbdhid"
+//#define U_KDB_CLASS L"\\Driver\\kbdclass"
+#define U_MOUSE_HID L"\\Driver\\mouhid"
+#define U_MOUSE_CLASS L"\\Driver\\mouclass"
+
+PDEVICE_OBJECT g_ClassDeviceObject = NULL;
+PVOID g_ClassService = NULL;
+
+NTSTATUS InitializeDevice()
 {
-	NTSTATUS status;
+	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	UNICODE_STRING DeviceName;
 	UNICODE_STRING ClassName;
 	PDRIVER_OBJECT HidDriverObject = NULL;
 	PDRIVER_OBJECT ClassDriverObject = NULL;
 	PVOID ClassDriverStart = NULL;
 	PVOID ClassDriverEnd = NULL;
+
 	RtlInitUnicodeString(&DeviceName, U_MOUSE_HID);
 	status = ObReferenceObjectByName(&DeviceName,
 		OBJ_CASE_INSENSITIVE,
@@ -65,8 +75,8 @@ NTSTATUS BleedBlack_p_SetupMouClass()
 					DeviceExtension[i + 1] > ClassDriverStart &&
 					DeviceExtension[i + 1] < ClassDriverEnd)
 				{
-					g_blContext->ClassDevice = ClassDeviceObject;
-					g_blContext->ClassService = DeviceExtension[i + 1];
+					g_ClassDeviceObject = ClassDeviceObject;
+					g_ClassService = DeviceExtension[i + 1];
 					status = STATUS_SUCCESS;
 					break;
 				}
@@ -89,12 +99,7 @@ NTSTATUS BleedBlack_p_SetupMouClass()
 	return status;
 }
 
-VOID BleedBlack_p_DpcDeferredRoutine(
-	PKDPC Dpc,
-	PVOID Context,
-	PVOID Arg1,
-	PVOID Arg2
-)
+VOID DpcDeferredRoutine(PKDPC Dpc, PVOID Context, PVOID Arg1, PVOID Arg2)
 {
 	UNREFERENCED_PARAMETER(Dpc);
 	UNREFERENCED_PARAMETER(Arg1);
@@ -111,3 +116,53 @@ VOID BleedBlack_p_DpcDeferredRoutine(
 
 	KeSetEvent(&DpcContext->Event, IO_MOUSE_INCREMENT, FALSE);
 }
+
+NTSTATUS CallService(PVOID Input, PVOID InputEnd, UINT32* Consumed)
+{
+	NTSTATUS status = STATUS_SUCCESS;
+	PDPC_CONTEXT Context = NULL;
+
+	for(;;)
+	{
+		Context = ExAllocatePool(NonPagedPool, sizeof(DPC_CONTEXT));
+		if (!Context)
+		{
+			return STATUS_INSUFFICIENT_RESOURCES;
+		}
+
+		Context->Callback = g_ClassService;
+		Context->Device = g_ClassDeviceObject;
+		Context->InputData = Input;
+		Context->InputDataEnd = InputEnd;
+		Context->Consumed = 0;
+
+		KeInitializeEvent(&Context->Event, NotificationEvent, FALSE);
+		KeInitializeDpc(&Context->Dpc, (PKDEFERRED_ROUTINE)DpcDeferredRoutine, Context);
+
+		if (!KeInsertQueueDpc(&Context->Dpc, NULL, NULL))
+		{
+			status = STATUS_INSUFFICIENT_RESOURCES;
+			break;
+		}
+
+		status = KeWaitForSingleObject(&Context->Event, Executive, KernelMode, FALSE, NULL);
+		if (!NT_SUCCESS(status))
+		{
+			break;
+		}
+
+		if (Consumed)
+		{
+			*Consumed = Context->Consumed;
+		}
+
+		break;
+	}
+
+	if (Context) {
+		ExFreePool(Context);
+	}
+
+	return status;
+}
+
