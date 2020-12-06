@@ -141,13 +141,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bleedblack.c" />
+    <ClCompile Include="bleedblack_internal.c" />
+    <ClCompile Include="main.c" />
     <ClCompile Include="dispatch.c" />
-    <ClCompile Include="input.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="bleedblack_internal.h" />
     <ClInclude Include="common.h" />
     <ClInclude Include="dispatch.h" />
-    <ClInclude Include="input.h" />
+    <ClInclude Include="bleedblack.h" />
     <ClInclude Include="ob.h" />
     <ClInclude Include="ps.h" />
   </ItemGroup>
