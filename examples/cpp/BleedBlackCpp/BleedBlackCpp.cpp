@@ -38,7 +38,7 @@ auto main() -> int
 	//
 	// Move the cursor in a circle
 	//
-	std::cout << "Watch the cursor do a full circle with the radius of 15 pixels." << std::endl;
+	std::cout << "Watch the cursor do a full circle." << std::endl;
 
 	//
 	// For simplicity, mouse events will execute in the context of our own process.

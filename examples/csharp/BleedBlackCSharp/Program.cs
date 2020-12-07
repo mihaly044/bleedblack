@@ -22,7 +22,7 @@ namespace BleedBlackCSharp
             //
             // Move the cursor in a circle
             //
-            Console.WriteLine(@"Watch the cursor do a full circle with the radius of 15 pixels.");
+            Console.WriteLine(@"Watch the cursor do a full circle.");
 
             //
             // For simplicity, mouse events will execute in the context of our own process.
