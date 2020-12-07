@@ -163,8 +163,8 @@ NTSTATUS MiiSendInput(
 	InputData->LastX = pInput->MovementX;
 	InputData->LastY = pInput->MovementY;
 
-	// TODO
-	// InputData->UnitId = ???
+	// Assume we have only one pointing device
+	InputData->UnitId = 1;
 	
 	if(SynchronizationLockAcquired)
 	{
