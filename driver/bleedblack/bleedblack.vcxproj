@@ -154,12 +154,12 @@
   <ItemGroup>
     <ClCompile Include="main.c" />
     <ClCompile Include="dispatch.c" />
-    <ClCompile Include="mi.c" />
+    <ClCompile Include="input.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="common.h" />
     <ClInclude Include="dispatch.h" />
-    <ClInclude Include="mi.h" />
+    <ClInclude Include="input.h" />
     <ClInclude Include="ob.h" />
     <ClInclude Include="ps.h" />
   </ItemGroup>

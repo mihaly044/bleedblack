@@ -1,4 +1,4 @@
-#include "mi.h"
+#include "input.h"
 #include <kbdmou.h>
 
 //#define U_KBD_HID L"\\Driver\\kbdhid"

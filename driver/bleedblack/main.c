@@ -1,6 +1,6 @@
 #include "common.h"
 #include "dispatch.h"
-#include "mi.h"
+#include "input.h"
 
 DRIVER_INITIALIZE DriverEntry;
 DRIVER_UNLOAD DriverUnload;
