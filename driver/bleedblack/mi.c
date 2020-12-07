@@ -159,6 +159,7 @@ NTSTATUS MiiSendInput(
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
+	RtlZeroMemory(InputData, sizeof(MOUSE_INPUT_DATA));
 	InputData->Flags = pInput->IndicatorFlags;
 	InputData->LastX = pInput->MovementX;
 	InputData->LastY = pInput->MovementY;
