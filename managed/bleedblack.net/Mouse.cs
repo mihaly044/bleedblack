@@ -17,7 +17,7 @@ namespace bleedblack.net
                 if (_handle == null)
                     throw new InvalidOperationException();
 
-                return MouseClNative.MouCL_IsReady(_handle);
+                return BleedBlackNative.Bleedblack_IsReady(_handle);
             }
         }
 
@@ -28,7 +28,15 @@ namespace bleedblack.net
                 Kernel32.SetDllDirectory(dllPath);
             }
 
-            _handle = MouseClNative.MouCL_Create();
+            _handle = BleedBlackNative.Bleedblack_Create();
+        }
+
+        public NtStatus Init()
+        {
+            if (_handle == null)
+                throw new InvalidOperationException();
+
+            return BleedBlackNative.Bleedblack_Init(_handle);
         }
 
         public NtStatus Move(ulong pid, long x, long y)
@@ -36,7 +44,7 @@ namespace bleedblack.net
             if (_handle == null)
                 throw new InvalidOperationException();
 
-            return MouseClNative.MouCL_Move(_handle, pid, x, y);
+            return BleedBlackNative.Bleedblack_Move(_handle, pid, x, y);
         }
 
         public NtStatus Click(ulong pid, ushort buttonFlags, ulong releaseDelayInSeconds)
@@ -44,7 +52,7 @@ namespace bleedblack.net
             if (_handle == null)
                 throw new InvalidOperationException();
 
-            return MouseClNative.MouCL_Click(_handle, pid, buttonFlags, releaseDelayInSeconds);
+            return BleedBlackNative.Bleedblack_Click(_handle, pid, buttonFlags, releaseDelayInSeconds);
         }
 
         public NtStatus Click(ulong pid, MouseButton button, ulong releaseDelayInSeconds)
@@ -55,7 +63,7 @@ namespace bleedblack.net
         private void ReleaseUnmanagedResources()
         {
             if (_handle != default)
-                MouseClNative.MouCL_Destroy(_handle);
+                BleedBlackNative.Bleedblack_Destroy(_handle);
         }
 
         public void Dispose()

@@ -3,24 +3,24 @@ using KdlCore.Native.Commons.Win32Types;
 
 namespace bleedblack.net.Native.Wrappers
 {
-	internal unsafe class MouseClNative
+	internal unsafe class BleedBlackNative
 	{
 		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-		internal static extern void* MouCL_Create();
+		internal static extern void* Bleedblack_Create();
 
 		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-		internal static extern NtStatus MouCL_Init(
+		internal static extern NtStatus Bleedblack_Init(
 			void* pHandle
 		);
 
 		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
 		[return: MarshalAs(UnmanagedType.Bool)]
-		internal static extern bool MouCL_IsReady(
+		internal static extern bool Bleedblack_IsReady(
 			void* pHandle
 		);
 
 		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-		internal static extern NtStatus MouCL_Move(
+		internal static extern NtStatus Bleedblack_Move(
 			void* pHandle,
 			[MarshalAs(UnmanagedType.U8)] ulong ulPid,
 			long x,
@@ -28,7 +28,7 @@ namespace bleedblack.net.Native.Wrappers
 		);
 
         [DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-        internal static extern NtStatus MouCL_Click(
+        internal static extern NtStatus Bleedblack_Click(
             void* pHandle,
             [MarshalAs(UnmanagedType.U8)] ulong ulPid,
             ushort buttonFlags,
@@ -37,7 +37,7 @@ namespace bleedblack.net.Native.Wrappers
 		);
 
 		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
-		internal static extern void MouCL_Destroy(
+		internal static extern void Bleedblack_Destroy(
 			void* pHandle
 		);
 	}
