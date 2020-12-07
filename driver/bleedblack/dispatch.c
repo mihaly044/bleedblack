@@ -1,5 +1,5 @@
 #include "dispatch.h"
-#include <bleedblack.h>
+#include <bleedblack/io.h>
 #include <ntddmou.h>
 #include "input.h"
 
@@ -34,7 +34,7 @@ NTSTATUS Dispatch(
 
 	switch (IoControlCode)
 	{
-	case IOCTL_MOVE_MOUSE:
+	case IOCTL_BLEEDBLACK_INPUT:
 		Buffer = Irp->AssociatedIrp.SystemBuffer;
 		
 		if(Buffer && inputBufferLength == sizeof(BLEEDBLACK_INPUT_REQUEST))
