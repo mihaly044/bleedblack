@@ -1,7 +1,5 @@
 #pragma once
 
-#include "io.h"
-
 #ifdef BLEEDBLACK_EXPORTS
 #define BLEEDBLACK_API __declspec(dllexport)
 #else

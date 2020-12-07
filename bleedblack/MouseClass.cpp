@@ -3,7 +3,7 @@
 
 #include <ntddmou.h>
 #include <strsafe.h>
-#include <bleedblack/bleedblack.h>
+#include <bleedblack/io.h>
 
 #include "Time.h"
 
@@ -86,12 +86,17 @@ CMouseClass* CMouseClass::Create()
 
 NTSTATUS CMouseClass::Init()
 {
-	NTSTATUS status = OpenDriver(U_BLEEDBLACK_DRIVER, GENERIC_WRITE | GENERIC_READ, &m_hDevice);
-	if (!NT_SUCCESS(status))
-		return status;
+	m_hDevice = CreateFile(U_BLEEDBLACK_DRIVER, FILE_ANY_ACCESS,
+		0, nullptr, OPEN_EXISTING,
+		FILE_ATTRIBUTE_DEVICE, nullptr);
+	
+	if (m_hDevice == INVALID_HANDLE_VALUE)
+	{
+		return NTSTATUS_FROM_WIN32(GetLastError());
+	}
 
 	m_bReady = TRUE;
-	return status;
+	return STATUS_SUCCESS;
 }
 
 NTSTATUS CMouseClass::Move(ULONG_PTR pid, LONG x, LONG y) const

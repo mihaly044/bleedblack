@@ -7,7 +7,6 @@
 #ifdef _KERNEL_MODE
 #include <ntdef.h>
 #else
-#include <minwindef.h>
 #include <devioctl.h>
 #endif
 
