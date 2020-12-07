@@ -17,6 +17,11 @@
 #pragma warning(disable: 4201)
 
 //
+// User-mode symlink path to the driver
+//
+#define U_BLEEDBLACK_DRIVER L"\\\\.\\{E80A5F57-345E-4E03-9B1A-5DEB83174A8D}"
+
+//
 // IOCTL codes
 //
 #define IOCTL_MOVE_MOUSE CTL_CODE(FILE_DEVICE_UNKNOWN, 0x900, METHOD_IN_DIRECT, FILE_ANY_ACCESS)
