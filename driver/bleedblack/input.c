@@ -6,16 +6,15 @@
 #define U_MOUSE_HID L"\\Driver\\mouhid"
 #define U_MOUSE_CLASS L"\\Driver\\mouclass"
 
-PMII_CONTEXT g_Context;
+PMII_CONTEXT g_Context = NULL;
 
 NTSTATUS MiipInitializeContext(
 	_Inout_ PMII_CONTEXT* ppMiiContext
 )
 {
 	NTSTATUS Status;
-	PMII_CONTEXT Context;
 
-	if(!*ppMiiContext)
+	if(!ppMiiContext)
 	{
 		DbgPrint("[%s] MiipInitializeContext: Invalid context parameter.", MODULE_NAME);
 		Status = STATUS_INVALID_PARAMETER;
@@ -29,21 +28,20 @@ NTSTATUS MiipInitializeContext(
 		return Status;
 	}
 
-	Context = ExAllocatePool(NonPagedPool, sizeof(MII_CONTEXT));
-	if(!Context)
+	*ppMiiContext = ExAllocatePool(NonPagedPool, sizeof(MII_CONTEXT));
+	if(!*ppMiiContext)
 	{
 		DbgPrint("[%s] MiipInitializeContext: Memory allocation for device stack context failed.", MODULE_NAME);
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
-	RtlZeroMemory(Context, sizeof(MII_CONTEXT));
-	*ppMiiContext = Context;
+	RtlZeroMemory(*ppMiiContext, sizeof(MII_CONTEXT));
 	return STATUS_SUCCESS;
 }
 
 NTSTATUS MiiInitializeDevice(VOID)
 {
-	NTSTATUS Status = STATUS_UNSUCCESSFUL;
+	NTSTATUS Status;
 	UNICODE_STRING DeviceName;
 	UNICODE_STRING ClassName;
 	PDRIVER_OBJECT HidDriverObject = NULL;
@@ -113,6 +111,9 @@ NTSTATUS MiiInitializeDevice(VOID)
 				{
 					g_Context->ClassDeviceObject = ClassDeviceObject;
 					g_Context->ClassService = DeviceExtension[i + 1];
+
+					DbgPrint("[%s] Found class device object at %p with service %p\n", MODULE_NAME,
+						g_Context->ClassDeviceObject, g_Context->ClassService);
 					
 					Status = STATUS_SUCCESS;
 					break;
