@@ -8,32 +8,57 @@
 
 PMII_CONTEXT g_Context;
 
+NTSTATUS MiipInitializeContext(
+	_Inout_ PMII_CONTEXT* ppMiiContext
+)
+{
+	NTSTATUS Status;
+	PMII_CONTEXT Context;
+
+	if(!*ppMiiContext)
+	{
+		DbgPrint("[%s] MiipInitializeContext: Invalid context parameter.", MODULE_NAME);
+		Status = STATUS_INVALID_PARAMETER;
+		return Status;
+	}
+	
+	if(*ppMiiContext && (*ppMiiContext)->DeviceStackInitialized)
+	{
+		DbgPrint("[%s] MiipInitializeContext: Device stack context already initialized.", MODULE_NAME);
+		Status = STATUS_ALREADY_INITIALIZED;
+		return Status;
+	}
+
+	Context = ExAllocatePool(NonPagedPool, sizeof(MII_CONTEXT));
+	if(!Context)
+	{
+		DbgPrint("[%s] MiipInitializeContext: Memory allocation for device stack context failed.", MODULE_NAME);
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+
+	RtlZeroMemory(Context, sizeof(MII_CONTEXT));
+	*ppMiiContext = Context;
+	return STATUS_SUCCESS;
+}
+
 NTSTATUS MiiInitializeDevice(VOID)
 {
-	NTSTATUS status = STATUS_UNSUCCESSFUL;
+	NTSTATUS Status = STATUS_UNSUCCESSFUL;
 	UNICODE_STRING DeviceName;
 	UNICODE_STRING ClassName;
 	PDRIVER_OBJECT HidDriverObject = NULL;
 	PDRIVER_OBJECT ClassDriverObject = NULL;
-	PVOID ClassDriverStart = NULL;
-	PVOID ClassDriverEnd = NULL;
+	PVOID ClassDriverStart;
+	PVOID ClassDriverEnd;
 
-	if(g_Context && g_Context->Initialized)
+	Status = MiipInitializeContext(&g_Context);
+	if(!NT_SUCCESS(Status))
 	{
-		KdPrint(("[%s] Already initialized\n", MODULE_NAME));
-		return STATUS_ALREADY_INITIALIZED;
+		DbgPrint("[%s] MiiInitializeDevice: MiipInitializeContext has failed with code 0x%08X", MODULE_NAME, Status);
 	}
-
-	g_Context = ExAllocatePool(NonPagedPool, sizeof(MII_CONTEXT));
-	if(!g_Context)
-	{
-		KdPrint(("[%s] Failed to allocate memory for context.\n", MODULE_NAME));
-		return STATUS_INSUFFICIENT_RESOURCES;
-	}
-	RtlZeroMemory(g_Context, sizeof(MII_CONTEXT));
 
 	RtlInitUnicodeString(&DeviceName, U_MOUSE_HID);
-	status = ObReferenceObjectByName(&DeviceName,
+	Status = ObReferenceObjectByName(&DeviceName,
 		OBJ_CASE_INSENSITIVE,
 		NULL,
 		FILE_ANY_ACCESS,
@@ -41,14 +66,14 @@ NTSTATUS MiiInitializeDevice(VOID)
 		KernelMode,
 		NULL,
 		(PVOID*)&HidDriverObject);
-	if (!NT_SUCCESS(status))
+	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("[%s] Failed to reference device %wZ 0x%08X\n", MODULE_NAME, DeviceName, status));
-		return status;
+		KdPrint(("[%s] Failed to reference device %wZ 0x%08X\n", MODULE_NAME, DeviceName, Status));
+		return Status;
 	}
 
 	RtlInitUnicodeString(&ClassName, U_MOUSE_CLASS);
-	status = ObReferenceObjectByName(&ClassName,
+	Status = ObReferenceObjectByName(&ClassName,
 		OBJ_CASE_INSENSITIVE,
 		NULL,
 		FILE_ANY_ACCESS,
@@ -56,15 +81,15 @@ NTSTATUS MiiInitializeDevice(VOID)
 		KernelMode,
 		NULL,
 		(PVOID*)&ClassDriverObject);
-	if (!NT_SUCCESS(status))
+	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("[%s] Failed to reference device %wZ 0x%08X\n", MODULE_NAME, ClassName, status));
-		return status;
+		KdPrint(("[%s] Failed to reference device %wZ 0x%08X\n", MODULE_NAME, ClassName, Status));
+		return Status;
 	}
 
 	ClassDriverStart = (PVOID)ClassDriverObject->DriverStart;
 	ClassDriverEnd = (PVOID)((SIZE_T)ClassDriverStart + ClassDriverObject->DriverSize);
-	status = STATUS_INTERNAL_ERROR;
+	Status = STATUS_INTERNAL_ERROR;
 
 	for (PDEVICE_OBJECT HidDeviceObject = HidDriverObject->DeviceObject;
 		HidDeviceObject; HidDeviceObject = HidDeviceObject->NextDevice)
@@ -89,15 +114,15 @@ NTSTATUS MiiInitializeDevice(VOID)
 					g_Context->ClassDeviceObject = ClassDeviceObject;
 					g_Context->ClassService = DeviceExtension[i + 1];
 					
-					status = STATUS_SUCCESS;
+					Status = STATUS_SUCCESS;
 					break;
 				}
 
-				if (NT_SUCCESS(status))
+				if (NT_SUCCESS(Status))
 					break;
 			}
 
-			if (NT_SUCCESS(status))
+			if (NT_SUCCESS(Status))
 				break;
 		}
 	}
@@ -108,51 +133,48 @@ NTSTATUS MiiInitializeDevice(VOID)
 	if (HidDriverObject)
 		ObDereferenceObject(HidDriverObject);
 
-	return status;
+	return Status;
 }
 
 NTSTATUS MiiSendInput(
-	_In_ PBLEEDLBACK_MOUSE_MOVEMENT_INPUT pInput
+	_In_ PBLEEDBLACK_INPUT_REQUEST pInput
 )
 {
 	KAPC_STATE ApcState;
 	PEPROCESS Process = NULL;
 	BOOLEAN SynchronizationLockAcquired = FALSE;
-	PMOUSE_INPUT_DATA InputData;
 	NTSTATUS Status;
 
 	if(pInput->ProcessId)
 	{
 		if (pInput->ProcessId < 4)
 		{
-			KdPrint(("[%s] Invalid PID %d\n", MODULE_NAME, pInput->ProcessId));
+			KdPrint(("[%s] Invalid PID %lu\n", MODULE_NAME, pInput->ProcessId));
 			Status = STATUS_INVALID_PARAMETER_1;
 			return Status;
 		}
-		else
+		
+		Status = PsLookupProcessByProcessId((HANDLE)pInput->ProcessId, &Process);
+		if(!NT_SUCCESS(Status))
 		{
-			Status = PsLookupProcessByProcessId((HANDLE)pInput->ProcessId, &Process);
-			if(!NT_SUCCESS(Status))
-			{
-				KdPrint(("[%s] PsLookupProcessByProcessId has failed with code 0x%08X\n",
-					MODULE_NAME, Status));
-				return Status;
-			}
-
-			Status = PsAcquireProcessExitSynchronization(Process);
-			if (!NT_SUCCESS(Status))
-			{
-				KdPrint(("[%s] PsAcquireProcessExitSynchronization has failed with code 0x%08X\n",
-					MODULE_NAME, Status));
-				return Status;
-			}
-
-			SynchronizationLockAcquired = TRUE;
+			KdPrint(("[%s] PsLookupProcessByProcessId has failed with code 0x%08X\n",
+				MODULE_NAME, Status));
+			return Status;
 		}
+
+		Status = PsAcquireProcessExitSynchronization(Process);
+		if (!NT_SUCCESS(Status))
+		{
+			KdPrint(("[%s] PsAcquireProcessExitSynchronization has failed with code 0x%08X\n",
+				MODULE_NAME, Status));
+			return Status;
+		}
+
+		SynchronizationLockAcquired = TRUE;
 	}
 
 	// Allocate mmry from the nonpaged pool to prevent our data from being paged out
-	InputData =(PMOUSE_INPUT_DATA)ExAllocatePool(NonPagedPool, sizeof(MOUSE_INPUT_DATA));
+	PMOUSE_INPUT_DATA InputData = (PMOUSE_INPUT_DATA)ExAllocatePool(NonPagedPool, sizeof(MOUSE_INPUT_DATA));
 	if(!InputData)
 	{
 		KdPrint(("[%s] Failed to allocate memory for InputData\n", MODULE_NAME));
@@ -160,9 +182,17 @@ NTSTATUS MiiSendInput(
 	}
 
 	RtlZeroMemory(InputData, sizeof(MOUSE_INPUT_DATA));
-	InputData->Flags = pInput->IndicatorFlags;
-	InputData->LastX = pInput->MovementX;
-	InputData->LastY = pInput->MovementY;
+	if(pInput->Move)
+	{
+		InputData->Flags = pInput->IndicatorFlags;
+		InputData->LastX = pInput->MovementX;
+		InputData->LastY = pInput->MovementY;
+	}
+	else
+	{
+		InputData->ButtonData = pInput->ButtonData;
+		InputData->ButtonFlags = pInput->ButtonFlags;
+	}
 
 	// Assume we have only one pointing device
 	InputData->UnitId = 1;

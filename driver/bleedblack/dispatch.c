@@ -14,14 +14,13 @@ NTSTATUS Dispatch(
 	UNREFERENCED_PARAMETER(DeviceObject);
 
 	NTSTATUS Status;
-	ULONG ReturnLength;
 	PVOID Buffer;
 
-	const PIO_STACK_LOCATION IoStack = IoGetCurrentIrpStackLocation(Irp);
-	const ULONG IoControlCode = IoStack->Parameters.DeviceIoControl.IoControlCode;
+	PIO_STACK_LOCATION IoStack = IoGetCurrentIrpStackLocation(Irp);
+	ULONG IoControlCode = IoStack->Parameters.DeviceIoControl.IoControlCode;
 	//const ULONG outputBufferLength = ioStack->Parameters.DeviceIoControl.OutputBufferLength;
-	const ULONG inputBufferLength = IoStack->Parameters.DeviceIoControl.InputBufferLength;
-	ReturnLength = 0;
+	ULONG inputBufferLength = IoStack->Parameters.DeviceIoControl.InputBufferLength;
+	ULONG ReturnLength = 0;
 
 	//
 	// Don't process IOCTLs coming from x86 processes
@@ -38,10 +37,10 @@ NTSTATUS Dispatch(
 	case IOCTL_MOVE_MOUSE:
 		Buffer = Irp->AssociatedIrp.SystemBuffer;
 		
-		if(Buffer && inputBufferLength == sizeof(BLEEDLBACK_MOUSE_MOVEMENT_INPUT))
+		if(Buffer && inputBufferLength == sizeof(PBLEEDBLACK_INPUT_REQUEST))
 		{
-			Status = MiiSendInput((PBLEEDLBACK_MOUSE_MOVEMENT_INPUT)Buffer);
-			ReturnLength = sizeof(BLEEDLBACK_MOUSE_MOVEMENT_INPUT);
+			Status = MiiSendInput((PBLEEDBLACK_INPUT_REQUEST)Buffer);
+			ReturnLength = sizeof(PBLEEDBLACK_INPUT_REQUEST);
 		}
 		else
 		{

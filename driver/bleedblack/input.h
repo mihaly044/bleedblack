@@ -20,13 +20,14 @@ typedef struct _MII_CONTEXT
     PDEVICE_OBJECT ClassDeviceObject;
     PVOID ClassService;
     USHORT UnitId;
-    BOOLEAN Initialized;
+    BOOLEAN DeviceStackInitialized;
 } MII_CONTEXT, *PMII_CONTEXT;
+
 
 NTSTATUS MiiInitializeDevice(VOID);
 
 NTSTATUS MiiSendInput(
-    _In_ PBLEEDLBACK_MOUSE_MOVEMENT_INPUT pInput
+    _In_ PBLEEDBLACK_INPUT_REQUEST pInput
 );
 
 NTSTATUS MiipCallService(
