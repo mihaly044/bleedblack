@@ -12,6 +12,7 @@
 //
 // The BleedBlack API
 //
+#include <ntddmou.h>
 #include <bleedblack/bleedblack.h>
 
 auto main() -> int
@@ -58,14 +59,14 @@ auto main() -> int
 	//
 	std::cout << "Left click in 3 seconds ..." << std::endl;
 	Sleep(3000);
-	Bleedblack_Click(bleedBlackHandle, myPid, MOUSEEVENTF_LEFTDOWN, 30);
+	Bleedblack_Click(bleedBlackHandle, myPid, MOUSE_LEFT_BUTTON_DOWN, 30);
 
 	//
 	// Right click
 	//
 	std::cout << "Right click in 3 seconds ..." << std::endl;
 	Sleep(3000);
-	Bleedblack_Click(bleedBlackHandle, myPid, MOUSEEVENTF_RIGHTDOWN, 30);
+	Bleedblack_Click(bleedBlackHandle, myPid, MOUSE_RIGHT_BUTTON_DOWN, 30);
 	
 	//
 	// Make sure you call this function when your app quits
