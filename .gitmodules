@@ -1,0 +1,6 @@
+[submodule "managed/kdlcore-native-commons"]
+	path = managed/kdlcore-native-commons
+	url = https://gitlab.mihaly.me/mihaly/kdlcore-native-commons
+[submodule "managed/KdlCore.Native.Commons"]
+	path = managed/KdlCore.Native.Commons
+	url = https://gitlab.mihaly.me/mihaly/kdlcore-native-commons
