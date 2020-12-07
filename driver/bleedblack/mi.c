@@ -1,5 +1,6 @@
-#include "input.h"
+#include "mi.h"
 #include "ob.h"
+#include "ps.h"
 #include <kbdmou.h>
 
 //#define U_KBD_HID L"\\Driver\\kbdhid"
@@ -7,9 +8,9 @@
 #define U_MOUSE_HID L"\\Driver\\mouhid"
 #define U_MOUSE_CLASS L"\\Driver\\mouclass"
 
-PBLEEDBLACK_CONTEXT g_Context;
+PMII_CONTEXT g_Context;
 
-NTSTATUS InitializeDevice(VOID)
+NTSTATUS MiiInitializeDevice(VOID)
 {
 	NTSTATUS status = STATUS_UNSUCCESSFUL;
 	UNICODE_STRING DeviceName;
@@ -25,13 +26,13 @@ NTSTATUS InitializeDevice(VOID)
 		return STATUS_ALREADY_INITIALIZED;
 	}
 
-	g_Context = ExAllocatePool(NonPagedPool, sizeof(BLEEDBLACK_CONTEXT));
+	g_Context = ExAllocatePool(NonPagedPool, sizeof(MII_CONTEXT));
 	if(!g_Context)
 	{
 		KdPrint(("[%s] Failed to allocate memory for context.\n", MODULE_NAME));
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
-	RtlZeroMemory(g_Context, sizeof(BLEEDBLACK_CONTEXT));
+	RtlZeroMemory(g_Context, sizeof(MII_CONTEXT));
 
 	RtlInitUnicodeString(&DeviceName, U_MOUSE_HID);
 	status = ObReferenceObjectByName(&DeviceName,
@@ -59,7 +60,7 @@ NTSTATUS InitializeDevice(VOID)
 		(PVOID*)&ClassDriverObject);
 	if (!NT_SUCCESS(status))
 	{
-		KdPrint(("[%s] failed to reference device %wZ 0x%08X\n", MODULE_NAME, ClassName, status));
+		KdPrint(("[%s] Failed to reference device %wZ 0x%08X\n", MODULE_NAME, ClassName, status));
 		return status;
 	}
 
@@ -112,13 +113,113 @@ NTSTATUS InitializeDevice(VOID)
 	return status;
 }
 
-VOID DpcDeferredRoutine(PKDPC Dpc, PVOID Context, PVOID Arg1, PVOID Arg2)
+NTSTATUS MiiSendInput(
+	_In_ PBLEEDLBACK_MOUSE_MOVEMENT_INPUT pInput
+)
+{
+	KAPC_STATE ApcState;
+	PEPROCESS Process = NULL;
+	BOOLEAN SynchronizationLockAcquired = FALSE;
+	PMOUSE_INPUT_DATA InputData;
+	NTSTATUS Status;
+
+	if(pInput->ProcessId)
+	{
+		if (pInput->ProcessId < 4)
+		{
+			KdPrint(("[%s] Invalid PID %d\n", MODULE_NAME, pInput->ProcessId));
+			Status = STATUS_INVALID_PARAMETER_1;
+			return Status;
+		}
+		else
+		{
+			Status = PsLookupProcessByProcessId((HANDLE)pInput->ProcessId, &Process);
+			if(!NT_SUCCESS(Status))
+			{
+				KdPrint(("[%s] PsLookupProcessByProcessId has failed with code 0x%08X\n",
+					MODULE_NAME, Status));
+				return Status;
+			}
+
+			Status = PsAcquireProcessExitSynchronization(Process);
+			if (!NT_SUCCESS(Status))
+			{
+				KdPrint(("[%s] PsAcquireProcessExitSynchronization has failed with code 0x%08X\n",
+					MODULE_NAME, Status));
+				return Status;
+			}
+
+			SynchronizationLockAcquired = TRUE;
+		}
+	}
+
+	// Allocate mmry from the nonpaged pool to prevent our data from being paged out
+	InputData =(PMOUSE_INPUT_DATA)ExAllocatePool(NonPagedPool, sizeof(MOUSE_INPUT_DATA));
+	if(!InputData)
+	{
+		KdPrint(("[%s] Failed to allocate memory for InputData\n", MODULE_NAME));
+		return STATUS_INSUFFICIENT_RESOURCES;
+	}
+
+	InputData->Flags = pInput->IndicatorFlags;
+	InputData->LastX = pInput->MovementX;
+	InputData->LastY = pInput->MovementY;
+
+	// TODO
+	// InputData->UnitId = ???
+	
+	if(SynchronizationLockAcquired)
+	{
+		__try
+		{
+			__try
+			{
+				KeStackAttachProcess(Process, &ApcState);
+				Status = MiipCallService((PVOID)InputData, (PVOID)(InputData + 1), NULL);
+			}
+			__finally
+			{
+				KeUnstackDetachProcess(&ApcState);
+			}
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER)
+		{
+			KdPrint(("[%s] Unexpected exception: 0x%X\n", MODULE_NAME, GetExceptionCode()));
+			Status = STATUS_DRIVER_INTERNAL_ERROR;
+		}
+	}
+	else
+	{
+		__try
+		{
+			Status = MiipCallService((PVOID)InputData, (PVOID)(InputData + 1), NULL);
+		}
+		__except (EXCEPTION_EXECUTE_HANDLER)
+		{
+			KdPrint(("[%s] Unexpected exception: 0x%X\n", MODULE_NAME, GetExceptionCode()));
+			Status = STATUS_DRIVER_INTERNAL_ERROR;
+		}	
+	}
+
+	if (InputData)
+		ExFreePool(InputData);
+	
+	if(SynchronizationLockAcquired)
+		PsReleaseProcessExitSynchronization(Process);
+
+	if (Process)
+		ObDereferenceObject(Process);
+	
+	return Status;
+}
+
+VOID MiipMouseDpcRoutine(PKDPC Dpc, PVOID Context, PVOID Arg1, PVOID Arg2)
 {
 	UNREFERENCED_PARAMETER(Dpc);
 	UNREFERENCED_PARAMETER(Arg1);
 	UNREFERENCED_PARAMETER(Arg2);
 
-	PDPC_CONTEXT DpcContext = (DPC_CONTEXT*)Context;
+	PMOU_DPC_CONTEXT DpcContext = (MOU_DPC_CONTEXT*)Context;
 	PSERVICE_CALLBACK_ROUTINE ServiceCallback = (PSERVICE_CALLBACK_ROUTINE)(DpcContext->Callback);
 
 	ServiceCallback(
@@ -130,18 +231,18 @@ VOID DpcDeferredRoutine(PKDPC Dpc, PVOID Context, PVOID Arg1, PVOID Arg2)
 	KeSetEvent(&DpcContext->Event, IO_MOUSE_INCREMENT, FALSE);
 }
 
-NTSTATUS CallService(
+NTSTATUS MiipCallService(
 	_In_ PVOID Input,
 	_In_ PVOID InputEnd,
 	_Out_opt_ UINT32* Consumed
 )
 {
 	NTSTATUS status = STATUS_SUCCESS;
-	PDPC_CONTEXT Context = NULL;
+	PMOU_DPC_CONTEXT Context = NULL;
 
 	for(;;)
 	{
-		Context = ExAllocatePool(NonPagedPool, sizeof(DPC_CONTEXT));
+		Context = ExAllocatePool(NonPagedPool, sizeof(MOU_DPC_CONTEXT));
 		if (!Context)
 		{
 			return STATUS_INSUFFICIENT_RESOURCES;
@@ -154,7 +255,7 @@ NTSTATUS CallService(
 		Context->Consumed = 0;
 
 		KeInitializeEvent(&Context->Event, NotificationEvent, FALSE);
-		KeInitializeDpc(&Context->Dpc, (PKDEFERRED_ROUTINE)DpcDeferredRoutine, Context);
+		KeInitializeDpc(&Context->Dpc, (PKDEFERRED_ROUTINE)MiipMouseDpcRoutine, Context);
 
 		if (!KeInsertQueueDpc(&Context->Dpc, NULL, NULL))
 		{
@@ -183,7 +284,7 @@ NTSTATUS CallService(
 	return status;
 }
 
-VOID ShutdownInput(VOID)
+VOID MiiDestroyDevice(VOID)
 {
 	if (g_Context)
 	{

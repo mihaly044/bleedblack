@@ -1,7 +1,8 @@
 #pragma once
 #include "common.h"
+#include <bleedblack.h>
 
-typedef struct _DPC_CONTEXT
+typedef struct _MOU_DPC_CONTEXT
 {
     KDPC            Dpc;
     KEVENT          Event;
@@ -10,21 +11,28 @@ typedef struct _DPC_CONTEXT
     PVOID           InputData;
     PVOID           InputDataEnd;
     ULONG           Consumed;
-} DPC_CONTEXT, *PDPC_CONTEXT;
+} MOU_DPC_CONTEXT, *PMOU_DPC_CONTEXT;
 
-typedef struct _BLEEDBLACK_CONTEXT
+typedef struct _MII_CONTEXT
 {
+	// TODO: Make use of InputLock
     FAST_MUTEX InputLock;
     PDEVICE_OBJECT ClassDeviceObject;
     PVOID ClassService;
     USHORT UnitId;
     BOOLEAN Initialized;
-} BLEEDBLACK_CONTEXT, *PBLEEDBLACK_CONTEXT;
+} MII_CONTEXT, *PMII_CONTEXT;
 
-NTSTATUS InitializeDevice(VOID);
-NTSTATUS CallService(
+NTSTATUS MiiInitializeDevice(VOID);
+
+NTSTATUS MiiSendInput(
+    _In_ PBLEEDLBACK_MOUSE_MOVEMENT_INPUT pInput
+);
+
+NTSTATUS MiipCallService(
     _In_ PVOID Input, 
     _In_ PVOID InputEnd,
     _Out_opt_ UINT32* Consumed
 );
-VOID ShutdownInput(VOID);
+
+VOID MiiDestroyDevice(VOID);

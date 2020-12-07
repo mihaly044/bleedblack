@@ -3,7 +3,7 @@
 #include "ps.h"
 #include <bleedblack.h>
 #include <ntddmou.h>
-#include "input.h"
+#include "mi.h"
 
 #pragma warning(disable: 28252 28253)
 
@@ -42,21 +42,8 @@ NTSTATUS Dispatch(
 		
 		if(Buffer && inputBufferLength == sizeof(BLEEDLBACK_MOUSE_MOVEMENT_INPUT))
 		{
-			PMOUSE_INPUT_DATA InputData = (PMOUSE_INPUT_DATA)ExAllocatePool(NonPagedPool, sizeof(MOUSE_INPUT_DATA));
-			PBLEEDLBACK_MOUSE_MOVEMENT_INPUT InputRequest = (PBLEEDLBACK_MOUSE_MOVEMENT_INPUT)Buffer;
-			
-			if(!InputData)
-			{
-				Status = STATUS_INSUFFICIENT_RESOURCES;
-				break;
-			}
-
-			InputData->Flags = InputRequest->IndicatorFlags;
-			InputData->LastX = InputRequest->MovementX;
-			InputData->LastY = InputRequest->MovementY;
-			
-			Status = CallService(InputData, InputData + 1, NULL);
-			ReturnLength = sizeof(PMOUSE_INPUT_DATA);
+			Status = MiiSendInput((PBLEEDLBACK_MOUSE_MOVEMENT_INPUT)Buffer);
+			ReturnLength = sizeof(BLEEDLBACK_MOUSE_MOVEMENT_INPUT);
 		}
 		else
 		{

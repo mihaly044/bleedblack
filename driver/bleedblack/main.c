@@ -1,6 +1,6 @@
 #include "common.h"
 #include "dispatch.h"
-#include "input.h"
+#include "mi.h"
 
 DRIVER_INITIALIZE DriverEntry;
 DRIVER_UNLOAD DriverUnload;
@@ -46,7 +46,7 @@ NTSTATUS DriverEntry(
 		return Status;
 	}
 
-	Status = InitializeDevice();
+	Status = MiiInitializeDevice();
 	if (!NT_SUCCESS(Status))
 	{
 		KdPrint(("[%s] failed to init device: 0x%08X\n", MODULE_NAME, Status));
@@ -61,7 +61,7 @@ VOID DriverUnload(
 	_In_ DRIVER_OBJECT* DriverObject)
 {
 	KdPrint(("Unloading %s\n", MODULE_NAME));
-	ShutdownInput();
+	MiiDestroyDevice();
 	IoDeleteSymbolicLink(&g_uszSymlink);
 	IoDeleteDevice(DriverObject->DeviceObject);
 	KdPrint(("Unloaded %s\n", MODULE_NAME));

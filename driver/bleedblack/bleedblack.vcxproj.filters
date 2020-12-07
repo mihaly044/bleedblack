@@ -21,10 +21,10 @@
     <ClCompile Include="dispatch.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="input.c">
+    <ClCompile Include="main.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="main.c">
+    <ClCompile Include="mi.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -41,7 +41,7 @@
     <ClInclude Include="ob.h">
       <Filter>Header Files\Undocumented APIs</Filter>
     </ClInclude>
-    <ClInclude Include="input.h">
+    <ClInclude Include="mi.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
