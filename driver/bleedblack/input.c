@@ -68,7 +68,7 @@ NTSTATUS MiiInitializeDevice(VOID)
 		(PVOID*)&HidDriverObject);
 	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("[%s] Failed to reference device %wZ 0x%08X\n", MODULE_NAME, DeviceName, Status));
+		DbgPrint("[%s] Failed to reference device %wZ 0x%08X\n", MODULE_NAME, DeviceName, Status);
 		return Status;
 	}
 
@@ -83,7 +83,7 @@ NTSTATUS MiiInitializeDevice(VOID)
 		(PVOID*)&ClassDriverObject);
 	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("[%s] Failed to reference device %wZ 0x%08X\n", MODULE_NAME, ClassName, Status));
+		DbgPrint("[%s] Failed to reference device %wZ 0x%08X\n", MODULE_NAME, ClassName, Status);
 		return Status;
 	}
 
@@ -149,7 +149,7 @@ NTSTATUS MiiSendInput(
 	{
 		if (pInput->ProcessId < 4)
 		{
-			KdPrint(("[%s] Invalid PID %lu\n", MODULE_NAME, pInput->ProcessId));
+			DbgPrint("[%s] Invalid PID %lu\n", MODULE_NAME, pInput->ProcessId);
 			Status = STATUS_INVALID_PARAMETER_1;
 			return Status;
 		}
@@ -157,16 +157,16 @@ NTSTATUS MiiSendInput(
 		Status = PsLookupProcessByProcessId((HANDLE)pInput->ProcessId, &Process);
 		if(!NT_SUCCESS(Status))
 		{
-			KdPrint(("[%s] PsLookupProcessByProcessId has failed with code 0x%08X\n",
-				MODULE_NAME, Status));
+			DbgPrint("[%s] PsLookupProcessByProcessId has failed with code 0x%08X\n",
+				MODULE_NAME, Status);
 			return Status;
 		}
 
 		Status = PsAcquireProcessExitSynchronization(Process);
 		if (!NT_SUCCESS(Status))
 		{
-			KdPrint(("[%s] PsAcquireProcessExitSynchronization has failed with code 0x%08X\n",
-				MODULE_NAME, Status));
+			DbgPrint("[%s] PsAcquireProcessExitSynchronization has failed with code 0x%08X\n",
+				MODULE_NAME, Status);
 			return Status;
 		}
 
@@ -177,7 +177,7 @@ NTSTATUS MiiSendInput(
 	PMOUSE_INPUT_DATA InputData = (PMOUSE_INPUT_DATA)ExAllocatePool(NonPagedPool, sizeof(MOUSE_INPUT_DATA));
 	if(!InputData)
 	{
-		KdPrint(("[%s] Failed to allocate memory for InputData\n", MODULE_NAME));
+		DbgPrint("[%s] Failed to allocate memory for InputData\n", MODULE_NAME);
 		return STATUS_INSUFFICIENT_RESOURCES;
 	}
 
@@ -213,7 +213,7 @@ NTSTATUS MiiSendInput(
 		}
 		__except (EXCEPTION_EXECUTE_HANDLER)
 		{
-			KdPrint(("[%s] Unexpected exception: 0x%X\n", MODULE_NAME, GetExceptionCode()));
+			DbgPrint("[%s] Unexpected exception: 0x%X\n", MODULE_NAME, GetExceptionCode());
 			Status = STATUS_DRIVER_INTERNAL_ERROR;
 		}
 	}
@@ -225,7 +225,7 @@ NTSTATUS MiiSendInput(
 		}
 		__except (EXCEPTION_EXECUTE_HANDLER)
 		{
-			KdPrint(("[%s] Unexpected exception: 0x%X\n", MODULE_NAME, GetExceptionCode()));
+			DbgPrint("[%s] Unexpected exception: 0x%X\n", MODULE_NAME, GetExceptionCode());
 			Status = STATUS_DRIVER_INTERNAL_ERROR;
 		}	
 	}

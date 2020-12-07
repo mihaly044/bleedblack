@@ -15,7 +15,7 @@ NTSTATUS DriverEntry(
 {
 	UNREFERENCED_PARAMETER(RegistryPath);
 
-	KdPrint(("Loading %s\n", MODULE_NAME));
+	DbgPrint("Loading %s\n", MODULE_NAME);
 	PDEVICE_OBJECT DeviceObject = NULL;
 	DriverObject->DriverUnload = DriverUnload;
 
@@ -28,7 +28,7 @@ NTSTATUS DriverEntry(
 		&DeviceObject);
 	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("[%s] failed to create device: 0x%08X\n", MODULE_NAME, Status));
+		DbgPrint("[%s] failed to create device: 0x%08X\n", MODULE_NAME, Status);
 		return Status;
 	}
 
@@ -41,7 +41,7 @@ NTSTATUS DriverEntry(
 
 	Status = IoCreateSymbolicLink(&g_uszSymlink, &g_uszDeviceName);
 	if (!NT_SUCCESS(Status)) {
-		KdPrint(("[%s] Failed to create symbolic link 0x%08X\n", MODULE_NAME, Status));
+		DbgPrint("[%s] Failed to create symbolic link 0x%08X\n", MODULE_NAME, Status);
 		IoDeleteDevice(DeviceObject);
 		return Status;
 	}
@@ -49,20 +49,20 @@ NTSTATUS DriverEntry(
 	Status = MiiInitializeDevice();
 	if (!NT_SUCCESS(Status))
 	{
-		KdPrint(("[%s] failed to init device: 0x%08X\n", MODULE_NAME, Status));
+		DbgPrint("[%s] failed to init device: 0x%08X\n", MODULE_NAME, Status);
 		return Status;
 	}
 
-	KdPrint(("Loaded %s\n", MODULE_NAME));
+	DbgPrint("Loaded %s\n", MODULE_NAME);
 	return Status;
 }
 
 VOID DriverUnload(
 	_In_ DRIVER_OBJECT* DriverObject)
 {
-	KdPrint(("Unloading %s\n", MODULE_NAME));
+	DbgPrint("Unloading %s\n", MODULE_NAME);
 	MiiDestroyDevice();
 	IoDeleteSymbolicLink(&g_uszSymlink);
 	IoDeleteDevice(DriverObject->DeviceObject);
-	KdPrint(("Unloaded %s\n", MODULE_NAME));
+	DbgPrint("Unloaded %s\n", MODULE_NAME);
 }

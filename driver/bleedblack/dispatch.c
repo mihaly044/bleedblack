@@ -52,7 +52,7 @@ NTSTATUS Dispatch(
 		//
 		// The specified I/O control code is unrecognized by this driver.
 		//
-		KdPrint(("[%s] Invalid request 0x%X", MODULE_NAME, IoStack->Parameters.DeviceIoControl.IoControlCode));
+		DbgPrint("[%s] Invalid request 0x%X", MODULE_NAME, IoStack->Parameters.DeviceIoControl.IoControlCode);
 		Status = STATUS_INVALID_DEVICE_REQUEST;
 	}
 
