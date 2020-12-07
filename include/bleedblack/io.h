@@ -15,10 +15,11 @@
 //
 #pragma warning(disable: 4201)
 
+
 //
-// User-mode symlink path to the driver
+// Name of the driver object used for communication
 //
-#define U_BLEEDBLACK_DRIVER L"\\\\.\\{E80A5F57-345E-4E03-9B1A-5DEB83174A8D}"
+#define U_BLEEDBLACK_DRIVER L"{E80A5F57-345E-4E03-9B1A-5DEB83174A8D}"
 
 //
 // IOCTL codes

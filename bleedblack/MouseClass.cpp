@@ -86,17 +86,14 @@ CMouseClass* CMouseClass::Create()
 
 NTSTATUS CMouseClass::Init()
 {
-	m_hDevice = CreateFile(U_BLEEDBLACK_DRIVER, FILE_ANY_ACCESS,
-		0, nullptr, OPEN_EXISTING,
-		FILE_ATTRIBUTE_DEVICE, nullptr);
-	
-	if (m_hDevice == INVALID_HANDLE_VALUE)
+	NTSTATUS status = OpenDriver(U_BLEEDBLACK_DRIVER, GENERIC_READ | GENERIC_WRITE, &m_hDevice);
+	if(!NT_SUCCESS(status))
 	{
-		return NTSTATUS_FROM_WIN32(GetLastError());
+		return status;
 	}
-
+	
 	m_bReady = TRUE;
-	return STATUS_SUCCESS;
+	return status;
 }
 
 NTSTATUS CMouseClass::Move(ULONG_PTR pid, LONG x, LONG y) const
