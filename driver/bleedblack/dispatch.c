@@ -37,7 +37,7 @@ NTSTATUS Dispatch(
 	case IOCTL_MOVE_MOUSE:
 		Buffer = Irp->AssociatedIrp.SystemBuffer;
 		
-		if(Buffer && inputBufferLength == sizeof(PBLEEDBLACK_INPUT_REQUEST))
+		if(Buffer && inputBufferLength == sizeof(BLEEDBLACK_INPUT_REQUEST))
 		{
 			Status = MiiSendInput((PBLEEDBLACK_INPUT_REQUEST)Buffer);
 			ReturnLength = sizeof(PBLEEDBLACK_INPUT_REQUEST);
