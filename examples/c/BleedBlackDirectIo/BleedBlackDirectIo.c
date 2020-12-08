@@ -80,7 +80,7 @@ void Move(HANDLE device, DWORD pid, int x, int y)
 //
 // Perform left and right clicks
 //
-void Click(HANDLE device, DWORD pid, DWORD button, ULONG releaseDelayInMilliseconds)
+void Click(HANDLE device, DWORD pid, USHORT button, ULONG releaseDelayInMilliseconds)
 {
 	IO_STATUS_BLOCK ioStatusBlock;
 	LARGE_INTEGER delayInterval;
@@ -104,6 +104,9 @@ void Click(HANDLE device, DWORD pid, DWORD button, ULONG releaseDelayInMilliseco
 	ZeroMemory(&request, sizeof(BLEEDBLACK_INPUT_REQUEST));
 	ZeroMemory(&delayInterval, sizeof(LARGE_INTEGER));
 
+	request.ProcessId = pid;
+	request.ButtonFlags = button;
+
 	NTSTATUS status = NtDeviceIoControlFile(device,
 		NULL,
 		NULL,
@@ -120,10 +123,12 @@ void Click(HANDLE device, DWORD pid, DWORD button, ULONG releaseDelayInMilliseco
 		printf("click: Error when communicating with the driver: 0x%08lx\r\n", status);
 	}
 
-	delayInterval.QuadPart = -(releaseDelayInMilliseconds * 10000000LL);
+	delayInterval.QuadPart = -(releaseDelayInMilliseconds * 10000LL);
 	NtDelayExecution(FALSE, &delayInterval);
 
+	ZeroMemory(&ioStatusBlock, sizeof(IO_STATUS_BLOCK));
 	request.ButtonFlags = releaseButton;
+
 	status = NtDeviceIoControlFile(device,
 		NULL,
 		NULL,
@@ -154,7 +159,7 @@ int main()
 	}
 	
 	ZeroMemory(&delayInterval, sizeof(LARGE_INTEGER));
-	delayInterval.QuadPart = -(5 * 10000000LL);
+	delayInterval.QuadPart = -(5 * 10000LL);
 	
 	DWORD myPid = GetCurrentProcessId();
 	const int radius = 15;
@@ -166,7 +171,7 @@ int main()
 		NtDelayExecution(FALSE, &delayInterval);
 	}
 
-	delayInterval.QuadPart = -(3000 * 10000000LL);
+	delayInterval.QuadPart = -(3000 * 10000LL);
 
 	printf("Left click in 3 seconds...\r\n");
 	NtDelayExecution(FALSE, &delayInterval);
