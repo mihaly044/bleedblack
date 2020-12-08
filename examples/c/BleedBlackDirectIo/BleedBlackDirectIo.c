@@ -148,7 +148,7 @@ void Click(HANDLE device, DWORD pid, USHORT button, ULONG releaseDelayInMillisec
 
 int main()
 {
-	HANDLE device;
+	HANDLE device = NULL;
 	LARGE_INTEGER delayInterval;
 
 	Connect(&device);
