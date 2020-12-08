@@ -17,6 +17,7 @@ namespace BleedBlackCSharp
             if (!status.IsSuccess())
             {
                 Console.WriteLine("Failed to initialize. Is the driver loaded?");
+                return;
             }
 
             //
