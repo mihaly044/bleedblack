@@ -11,12 +11,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "include", "include", "{8DE9
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bleedblack", "bleedblack\bleedblack.vcxproj", "{DC6EA5B3-31BF-44E7-8F04-9364E637A314}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ntos", "ntos", "{4E1EA2F9-68E5-4C91-9379-EAB23FE0D37F}"
-	ProjectSection(SolutionItems) = preProject
-		include\ntos\halamd64.h = include\ntos\halamd64.h
-		include\ntos\ntos.h = include\ntos\ntos.h
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "bleedblack", "bleedblack", "{5BE5FAEB-A683-4284-986F-439A93EB13B6}"
 	ProjectSection(SolutionItems) = preProject
 		include\bleedblack\bleedblack.h = include\bleedblack\bleedblack.h
@@ -146,7 +140,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9} = {B1E66E62-8E97-49C3-8A6A-328714ED5511}
-		{4E1EA2F9-68E5-4C91-9379-EAB23FE0D37F} = {8DE92034-5033-4BA1-8CB6-697087592677}
 		{5BE5FAEB-A683-4284-986F-439A93EB13B6} = {8DE92034-5033-4BA1-8CB6-697087592677}
 		{24B66FBA-8630-4CA1-B8C6-E48539959996} = {AB18B6E8-FDFA-4809-9022-7333AE2AAEBD}
 		{EA04C64B-A23C-4EF1-8994-CE018E1D9642} = {AB18B6E8-FDFA-4809-9022-7333AE2AAEBD}

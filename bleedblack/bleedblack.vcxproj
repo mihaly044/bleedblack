@@ -162,6 +162,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="MouseClass.h" />
+    <ClInclude Include="nt.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Time.h" />
   </ItemGroup>
