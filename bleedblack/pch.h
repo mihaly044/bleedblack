@@ -11,5 +11,5 @@
 #pragma warning(disable: 4005)
 #include <Windows.h>
 #include <ntstatus.h>
-#include <winternl.h>
+#include <ntos/ntos.h>
 #endif //PCH_H

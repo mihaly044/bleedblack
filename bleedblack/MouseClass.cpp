@@ -6,7 +6,6 @@
 #include <bleedblack/io.h>
 
 #include "Time.h"
-#include "nt.h"
 
 CMouseClass::CMouseClass()
 	: m_hDevice(INVALID_HANDLE_VALUE),
