@@ -99,6 +99,9 @@ NTSTATUS MiiInitializeDevice(VOID)
 			continue;
 
 		SIZE_T DeviceExtPtrCount = SizeOfDevExtension / sizeof(PVOID) - 1;
+		DbgPrint("[%s] SizeOfDevExtension %d, DeviceExtPtrCount %d, ClassDriverObject->DeviceObject %p\n", MODULE_NAME, 
+			SizeOfDevExtension, DeviceExtPtrCount, ClassDriverObject->DeviceObject);
+
 		PVOID* DeviceExtension = (PVOID*)HidDeviceObject->DeviceExtension;
 		for (PDEVICE_OBJECT ClassDeviceObject = ClassDriverObject->DeviceObject;
 			ClassDeviceObject; ClassDeviceObject = ClassDeviceObject->NextDevice)
