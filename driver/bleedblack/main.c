@@ -42,7 +42,7 @@ NTSTATUS DriverEntry(
 	Status = IoCreateSymbolicLink(&g_uszSymlink, &g_uszDeviceName);
 	if (!NT_SUCCESS(Status)) {
 		DbgPrint("[%s] Failed to create symbolic link 0x%08X\n", MODULE_NAME, Status);
-		IoDeleteDevice(DeviceObject);
+		DriverUnload(DriverObject);
 		return Status;
 	}
 
@@ -50,6 +50,7 @@ NTSTATUS DriverEntry(
 	if (!NT_SUCCESS(Status))
 	{
 		DbgPrint("[%s] failed to init device: 0x%08X\n", MODULE_NAME, Status);
+		DriverUnload(DriverObject);
 		return Status;
 	}
 
@@ -63,6 +64,11 @@ VOID DriverUnload(
 	DbgPrint("Unloading %s\n", MODULE_NAME);
 	MiiDestroyDevice();
 	IoDeleteSymbolicLink(&g_uszSymlink);
-	IoDeleteDevice(DriverObject->DeviceObject);
+	
+	if (DriverObject->DeviceObject)
+	{
+		IoDeleteDevice(DriverObject->DeviceObject);
+	}
+
 	DbgPrint("Unloaded %s\n", MODULE_NAME);
 }
