@@ -14,48 +14,48 @@ NTSTATUS DriverEntry(
 )
 {
 	UNREFERENCED_PARAMETER(RegistryPath);
+	PDEVICE_OBJECT DeviceObject = NULL;
+	NTSTATUS status;
+
 
 	DbgPrint("Loading %s\n", MODULE_NAME);
-	PDEVICE_OBJECT DeviceObject = NULL;
 	DriverObject->DriverUnload = DriverUnload;
 
-	NTSTATUS Status = IoCreateDevice(DriverObject,
+	status = MiiInitializeDevice();
+	if (!NT_SUCCESS(status))
+	{
+		DbgPrint("[%s] failed to init device: 0x%08X\n", MODULE_NAME, status);
+		return STATUS_DEVICE_FEATURE_NOT_SUPPORTED;
+	}
+
+	status = IoCreateDevice(DriverObject,
 		0,
 		&g_uszDeviceName,
 		FILE_DEVICE_UNKNOWN,
 		FILE_DEVICE_SECURE_OPEN,
 		FALSE,
 		&DeviceObject);
-	if (!NT_SUCCESS(Status))
+	if (!NT_SUCCESS(status))
 	{
-		DbgPrint("[%s] failed to create device: 0x%08X\n", MODULE_NAME, Status);
-		return Status;
+		DbgPrint("[%s] failed to create device: 0x%08X\n", MODULE_NAME, status);
+		return status;
 	}
 
 	DeviceObject->Flags &= ~DO_DEVICE_INITIALIZING;
 	DeviceObject->Flags |= DO_DIRECT_IO;
-	
+
 	DriverObject->MajorFunction[IRP_MJ_CREATE] = GenericDispatch;
 	DriverObject->MajorFunction[IRP_MJ_CLOSE] = GenericDispatch;
 	DriverObject->MajorFunction[IRP_MJ_DEVICE_CONTROL] = Dispatch;
 
-	Status = IoCreateSymbolicLink(&g_uszSymlink, &g_uszDeviceName);
-	if (!NT_SUCCESS(Status)) {
-		DbgPrint("[%s] Failed to create symbolic link 0x%08X\n", MODULE_NAME, Status);
-		DriverUnload(DriverObject);
-		return Status;
-	}
-
-	Status = MiiInitializeDevice();
-	if (!NT_SUCCESS(Status))
-	{
-		DbgPrint("[%s] failed to init device: 0x%08X\n", MODULE_NAME, Status);
-		DriverUnload(DriverObject);
-		return Status;
+	status = IoCreateSymbolicLink(&g_uszSymlink, &g_uszDeviceName);
+	if (!NT_SUCCESS(status)) {
+		DbgPrint("[%s] Failed to create symbolic link 0x%08X\n", MODULE_NAME, status);
+		return status;
 	}
 
 	DbgPrint("Loaded %s\n", MODULE_NAME);
-	return Status;
+	return status;
 }
 
 VOID DriverUnload(
