@@ -46,8 +46,6 @@ NTSTATUS MiiInitializeDevice(VOID)
 	UNICODE_STRING ClassName;
 	PDRIVER_OBJECT HidDriverObject = NULL;
 	PDRIVER_OBJECT ClassDriverObject = NULL;
-	PVOID ClassDriverStart;
-	PVOID ClassDriverEnd;
 
 	Status = MiipInitializeContext(&g_Context);
 	if(!NT_SUCCESS(Status))
@@ -85,50 +83,56 @@ NTSTATUS MiiInitializeDevice(VOID)
 		return Status;
 	}
 
-	ClassDriverStart = (PVOID)ClassDriverObject->DriverStart;
-	ClassDriverEnd = (PVOID)((SIZE_T)ClassDriverStart + ClassDriverObject->DriverSize);
-	Status = STATUS_INTERNAL_ERROR;
+	Status = STATUS_SYSTEM_DEVICE_NOT_FOUND;
 
-	for (PDEVICE_OBJECT HidDeviceObject = HidDriverObject->DeviceObject;
-		HidDeviceObject; HidDeviceObject = HidDeviceObject->NextDevice)
+	PDEVICE_OBJECT HidDeviceObject = HidDriverObject->DeviceObject;
+	while(HidDeviceObject && !g_Context->ClassService)
 	{
-		LONGLONG SizeOfDevExtension = (LONGLONG)HidDeviceObject->DeviceObjectExtension
-			- (LONGLONG)HidDeviceObject->DeviceExtension;
-
-		if (SizeOfDevExtension <= 0)
-			continue;
-
-		SIZE_T DeviceExtPtrCount = SizeOfDevExtension / sizeof(PVOID) - 1;
-		DbgPrint("[%s] SizeOfDevExtension %d, DeviceExtPtrCount %d, ClassDriverObject->DeviceObject %p\n", MODULE_NAME, 
-			SizeOfDevExtension, DeviceExtPtrCount, ClassDriverObject->DeviceObject);
-
-		PVOID* DeviceExtension = (PVOID*)HidDeviceObject->DeviceExtension;
-		for (PDEVICE_OBJECT ClassDeviceObject = ClassDriverObject->DeviceObject;
-			ClassDeviceObject; ClassDeviceObject = ClassDeviceObject->NextDevice)
+		PDEVICE_OBJECT ClassDeviceObject = ClassDriverObject->DeviceObject;
+		while(ClassDeviceObject && !g_Context->ClassService)
 		{
-			for (ULONG i = 0u; i < DeviceExtPtrCount; ++i)
-			{
-				if (DeviceExtension[i] == ClassDeviceObject &&
-					DeviceExtension[i + 1] > ClassDriverStart &&
-					DeviceExtension[i + 1] < ClassDriverEnd)
-				{
-					g_Context->ClassDeviceObject = ClassDeviceObject;
-					g_Context->ClassService = DeviceExtension[i + 1];
+			if (ClassDeviceObject->NextDevice && !g_Context->ClassDeviceObject)
+				g_Context->ClassDeviceObject = ClassDeviceObject;
 
-					DbgPrint("[%s] Found class device object at %p with service %p\n", MODULE_NAME,
-						g_Context->ClassDeviceObject, g_Context->ClassService);
-					
-					Status = STATUS_SUCCESS;
+			ULONG_PTR SizeOfDeviceExt = ((ULONG_PTR)HidDeviceObject->DeviceObjectExtension
+				- (ULONG_PTR)HidDeviceObject->DeviceExtension) / 4;
+			PULONG_PTR DeviceExtension = (PULONG_PTR)HidDeviceObject->DeviceExtension;
+
+			for(ULONG_PTR i = 0; i < SizeOfDeviceExt; ++i)
+			{
+				if(DeviceExtension[i] == (ULONG_PTR)ClassDeviceObject
+					&& DeviceExtension[i + 1] > (ULONG_PTR)ClassDriverObject)
+				{
+					g_Context->ClassService = (PVOID)DeviceExtension[i + 1];
 					break;
 				}
-
-				if (NT_SUCCESS(Status))
-					break;
 			}
 
-			if (NT_SUCCESS(Status))
-				break;
+			ClassDeviceObject = ClassDeviceObject->NextDevice;
 		}
+
+		HidDeviceObject = HidDeviceObject->AttachedDevice;
+	}
+
+	if (!g_Context->ClassDeviceObject)
+	{
+		PDEVICE_OBJECT TargetDevice = ClassDriverObject->DeviceObject;
+		while (TargetDevice)
+		{
+			if (!TargetDevice->NextDevice)
+			{
+				g_Context->ClassDeviceObject = TargetDevice;
+				break;
+			}
+			
+			TargetDevice = TargetDevice->NextDevice;
+		}
+	}
+
+	if (g_Context->ClassDeviceObject && g_Context->ClassService)
+	{
+		Status = STATUS_SUCCESS;
+		g_Context->DeviceStackInitialized = TRUE;
 	}
 
 	if (ClassDriverObject)
