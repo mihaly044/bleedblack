@@ -51,6 +51,7 @@ NTSTATUS MiiInitializeDevice(VOID)
 	if(!NT_SUCCESS(Status))
 	{
 		DbgPrint("[%s] MiiInitializeDevice: MiipInitializeContext has failed with code 0x%08X", MODULE_NAME, Status);
+		return Status;
 	}
 
 	RtlInitUnicodeString(&DeviceName, U_MOUSE_HID);
