@@ -25,7 +25,7 @@ NTSTATUS DriverEntry(
 	if (!NT_SUCCESS(status))
 	{
 		DbgPrint("[%s] failed to init device: 0x%08X\n", MODULE_NAME, status);
-		return STATUS_DEVICE_FEATURE_NOT_SUPPORTED;
+		return status;
 	}
 
 	status = IoCreateDevice(DriverObject,
