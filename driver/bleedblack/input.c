@@ -1,5 +1,6 @@
 #include "input.h"
 #include <kbdmou.h>
+#include <ntimage.h>
 
 //#define U_KBD_HID L"\\Driver\\kbdhid"
 //#define U_KDB_CLASS L"\\Driver\\kbdclass"
@@ -89,6 +90,16 @@ NTSTATUS MiiInitializeDevice(VOID)
 	PDEVICE_OBJECT HidDeviceObject = HidDriverObject->DeviceObject;
 	while(HidDeviceObject && !g_Context->ClassService)
 	{
+		PIMAGE_DOS_HEADER dosh = HidDeviceObject->DriverObject->DriverStart;
+		PIMAGE_NT_HEADERS nth = (IMAGE_NT_HEADERS*)((PUCHAR)dosh  + dosh->e_lfanew);
+
+		if(nth->FileHeader.TimeDateStamp == 0x4F3C4288ul)
+		{
+			DbgPrint("[%s] Detected incompatible driver, aborting\n", MODULE_NAME);
+			Status = STATUS_INCOMPATIBLE_DRIVER_BLOCKED;
+			break;
+		}
+		
 		PDEVICE_OBJECT ClassDeviceObject = ClassDriverObject->DeviceObject;
 		while(ClassDeviceObject && !g_Context->ClassService)
 		{
@@ -115,7 +126,7 @@ NTSTATUS MiiInitializeDevice(VOID)
 		HidDeviceObject = HidDeviceObject->AttachedDevice;
 	}
 
-	if (!g_Context->ClassDeviceObject)
+	if (!g_Context->ClassDeviceObject && Status == STATUS_SYSTEM_DEVICE_NOT_FOUND)
 	{
 		PDEVICE_OBJECT TargetDevice = ClassDriverObject->DeviceObject;
 		while (TargetDevice)
