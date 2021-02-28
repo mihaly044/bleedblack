@@ -1,6 +1,5 @@
 #include "dispatch.h"
 #include <bleedblack/io.h>
-#include <ntddmou.h>
 #include "input.h"
 
 #pragma warning(disable: 28252 28253)
