@@ -63,6 +63,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /b/v/y $(SolutionDir)x64\$(ConfigurationName)\bleedblack.dll $(TargetDir)bleedblack.dll</PostBuildEvent>
+    <PostBuildEvent>call "$(DevEnvDir)..\Tools\VsDevCmd.bat"
+editbin /LARGEADDRESSAWARE:no $(TargetFileName)
+copy /b/v/y $(SolutionDir)x64\$(ConfigurationName)\bleedblack.dll $(TargetDir)bleedblack.dll</PostBuildEvent>
   </PropertyGroup>
 </Project>
