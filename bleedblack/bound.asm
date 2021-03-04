@@ -1,8 +1,5 @@
 .code
 _trigger_br PROC
-
-	ret
-
 	; Put the param address into rcx:edx
 	; rdx will automatically get truncated
 	; to its lower 32 bits when switching to 32-bit mode
