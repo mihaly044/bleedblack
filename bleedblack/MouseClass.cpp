@@ -7,77 +7,10 @@
 
 #include "Time.h"
 
-CMouseClass::CMouseClass()
-	: m_hDevice(INVALID_HANDLE_VALUE),
-	m_bReady(FALSE)
-{
+extern "C" void _trigger_br(PBLEEDBLACK_INPUT_REQUEST input);
 
-}
-
-NTSTATUS CMouseClass::OpenDriver(LPCWSTR lpName, ACCESS_MASK dwAccessMask, PHANDLE pDeviceHandleOut)
-{
-	NTSTATUS status;
-
-	UNICODE_STRING usDeviceLink;
-	OBJECT_ATTRIBUTES obja;
-	IO_STATUS_BLOCK iost;
-
-	TCHAR szDeviceLink[MAX_PATH + 1];
-
-	// assume failure
-	if (pDeviceHandleOut)
-		*pDeviceHandleOut = INVALID_HANDLE_VALUE;
-	else
-		return STATUS_INVALID_PARAMETER_2;
-
-	if (lpName)
-	{
-		RtlSecureZeroMemory(szDeviceLink, sizeof(szDeviceLink));
-
-		if (StringCchPrintf(szDeviceLink,
-			MAX_PATH,
-			TEXT("\\DosDevices\\%wS"),
-			lpName) != ERROR_SUCCESS)
-		{
-			return STATUS_INVALID_PARAMETER_1;
-		}
-
-		RtlInitUnicodeString(&usDeviceLink, szDeviceLink);
-		InitializeObjectAttributes(&obja, &usDeviceLink, OBJ_CASE_INSENSITIVE, NULL, NULL)
-
-		status = NtCreateFile(pDeviceHandleOut,
-		                      dwAccessMask,
-		                      &obja,
-		                      &iost,
-		                      nullptr,
-		                      0,
-		                      0,
-		                      FILE_OPEN,
-		                      0,
-		                      nullptr,
-		                      0);
-
-	}
-	else
-	{
-		status = STATUS_INVALID_PARAMETER_1;
-	}
-
-	return status;
-}
-
-NTSTATUS CMouseClass::CallDriver(HANDLE hDevice, ULONG ulCtlCode, PVOID pInput, ULONG cbInput, PVOID pOutput, ULONG cbOutput, PDWORD returnLength)
-{
-	IO_STATUS_BLOCK ioStatus;
-	const NTSTATUS status = NtDeviceIoControlFile(hDevice, nullptr, nullptr, nullptr, &ioStatus, ulCtlCode,
-
-		pInput, cbInput,
-		pOutput, cbOutput);
-	if (returnLength)
-		*returnLength = static_cast<DWORD>(ioStatus.Information);
-
-	return status;
-}
+CMouseClass::CMouseClass() = default;
+CMouseClass::~CMouseClass() = default;
 
 CMouseClass* CMouseClass::Create()
 {
@@ -86,21 +19,12 @@ CMouseClass* CMouseClass::Create()
 
 NTSTATUS CMouseClass::Init()
 {
-	NTSTATUS status = OpenDriver(U_BLEEDBLACK_DRIVER, GENERIC_READ | GENERIC_WRITE, &m_hDevice);
-	if(!NT_SUCCESS(status))
-	{
-		return status;
-	}
-	
-	m_bReady = TRUE;
-	return status;
+	// Return value might be inaccurate
+	return STATUS_SUCCESS;
 }
 
-NTSTATUS CMouseClass::Move(ULONG_PTR pid, LONG x, LONG y) const
+NTSTATUS CMouseClass::Move(ULONG_PTR pid, LONG x, LONG y)
 {
-	if (!m_bReady)
-		return STATUS_REINITIALIZATION_NEEDED;
-
 	BLEEDBLACK_INPUT_REQUEST request;
 	RtlZeroMemory(&request, sizeof request);
 
@@ -108,14 +32,14 @@ NTSTATUS CMouseClass::Move(ULONG_PTR pid, LONG x, LONG y) const
 	request.MovementX = x;
 	request.MovementY = y;
 
-	return CallDriver(m_hDevice, IOCTL_BLEEDBLACK_INPUT, &request, sizeof request, nullptr, 0, nullptr);
+	_trigger_br(&request);
+
+	// Return value might be inaccurate
+	return STATUS_SUCCESS;
 }
 
-NTSTATUS CMouseClass::Click(ULONG_PTR pid, USHORT button, ULONG ReleaseDelayInMilliseconds) const
+NTSTATUS CMouseClass::Click(ULONG_PTR pid, USHORT button, ULONG ReleaseDelayInMilliseconds)
 {
-	if (!m_bReady)
-		return STATUS_REINITIALIZATION_NEEDED;
-	
 	LARGE_INTEGER delayInterval = {};
 	USHORT releaseButton;
 	NTSTATUS status;
@@ -156,9 +80,7 @@ NTSTATUS CMouseClass::Click(ULONG_PTR pid, USHORT button, ULONG ReleaseDelayInMi
 	request.ButtonFlags = button;
 	request.ProcessId = pid;
 
-	status = CallDriver(m_hDevice, IOCTL_BLEEDBLACK_INPUT, &request, sizeof(request), nullptr, 0, nullptr);
-	if (!NT_SUCCESS(status))
-		return status;
+	_trigger_br(&request);
 
 	status = NtDelayExecution(FALSE, &delayInterval);
 	if (!NT_SUCCESS(status))
@@ -166,17 +88,13 @@ NTSTATUS CMouseClass::Click(ULONG_PTR pid, USHORT button, ULONG ReleaseDelayInMi
 
 	request.Move = FALSE;
 	request.ButtonFlags = releaseButton;
-	status = CallDriver(m_hDevice, IOCTL_BLEEDBLACK_INPUT, &request, sizeof(request), nullptr, 0, nullptr);
+	
+	_trigger_br(&request);
 	return status;
 }
 
-BOOLEAN CMouseClass::IsReady() const
+BOOLEAN CMouseClass::IsReady()
 {
-	return m_bReady;
-}
-
-CMouseClass::~CMouseClass()
-{
-	if (m_hDevice != INVALID_HANDLE_VALUE)
-		NtClose(m_hDevice);
+	// Return value might be inaccurate
+	return TRUE;
 }
