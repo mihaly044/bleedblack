@@ -76,6 +76,12 @@ auto main() -> int
 	std::cout << "Right click in 3 seconds ..." << std::endl;
 	Sleep(3000);
 	Bleedblack_Click(g_hBleedBlack, myPid, MOUSE_RIGHT_BUTTON_DOWN, 30);
+
+	//
+	// Wait for the bleedblack driver to finish up before quitting
+	// TODO: Use an event for this
+	//
+	Sleep(300);
 	
 	//
 	// Make sure you call this function when your app quits

@@ -51,6 +51,12 @@ namespace BleedBlackCSharp
             Console.WriteLine("Right click in 3 seconds ...");
             Thread.Sleep(3000);
             mouse.Click(myPid, MouseButton.RIGHT, 30);
+
+            //
+            // Wait for the bleedblack driver to finish up before quitting
+            // TODO: Use an event for this
+            //
+            Thread.Sleep(300);
         }
     }
 }
