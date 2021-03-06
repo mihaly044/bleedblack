@@ -21,6 +21,7 @@ private:
 	HANDLE m_hShmMapping;
 	HANDLE m_hIpcProc;
 	HANDLE m_hIpcProcThreadHandle;
+	HANDLE m_hJob;
 	BOOL m_bIpc;
 	BOOL m_bIpcReady;
 };

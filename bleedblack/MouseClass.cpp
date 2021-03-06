@@ -15,6 +15,7 @@ CMouseClass::CMouseClass()
 	  m_hShmMapping(nullptr),
 	  m_hIpcProc(nullptr),
 	  m_hIpcProcThreadHandle(nullptr),
+	  m_hJob(nullptr),
 	  m_bIpc(FALSE),
 	  m_bIpcReady(FALSE)
 {
@@ -40,6 +41,9 @@ CMouseClass::~CMouseClass()
 	if (m_hIpcProc)
 		CloseHandle(m_hIpcProcThreadHandle);
 
+	if (m_hJob)
+		CloseHandle(m_hJob);
+	
 	if (m_hIpcProc)
 		CloseHandle(m_hIpcProc);
 }
@@ -101,12 +105,34 @@ NTSTATUS CMouseClass::Init()
 		ZeroMemory(&pi, sizeof pi);
 		si.cb = sizeof si;
 
+		BOOL bIsProcessInJob;
+		if(!IsProcessInJob(GetCurrentProcess(), nullptr, &bIsProcessInJob))
+			return __NTSTATUS_FROM_WIN32(GetLastError());
+
+		DWORD dwCreationFlags = CREATE_SUSPENDED;
+		if (bIsProcessInJob)
+			dwCreationFlags |= CREATE_BREAKAWAY_FROM_JOB;
+		
 		if(!CreateProcess(L"blipcsrv.exe", 
-			nullptr, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &si, &pi))
+			nullptr, nullptr, nullptr, TRUE, dwCreationFlags, nullptr, nullptr, &si, &pi))
 		{
 			MessageBox(nullptr, L"Failed to start blipcsrv", L"Error", MB_ICONERROR | MB_OK);
 			return __NTSTATUS_FROM_WIN32(GetLastError());
 		}
+
+		m_hJob = CreateJobObjectA(nullptr, nullptr);
+		if(!m_hJob)
+			return __NTSTATUS_FROM_WIN32(GetLastError());
+		
+		JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = { 0 };
+		jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+		if(!SetInformationJobObject(m_hJob, 
+			JobObjectExtendedLimitInformation, &jeli, sizeof jeli))
+			return __NTSTATUS_FROM_WIN32(GetLastError());
+
+		AssignProcessToJobObject(m_hJob, pi.hProcess);
+
+		ResumeThread(pi.hThread);
 
 		m_hIpcProc = pi.hProcess;
 		m_hIpcProcThreadHandle = pi.hThread;
