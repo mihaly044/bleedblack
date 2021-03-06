@@ -19,7 +19,6 @@ private:
 	CRITICAL_SECTION m_cs {};
 	PBLEEDBLACK_IPC m_ipc;
 	HANDLE m_hShmMapping;
-	HANDLE m_hShmEvt;
 	HANDLE m_hIpcProc;
 	HANDLE m_hIpcProcThreadHandle;
 	BOOL m_bIpc;

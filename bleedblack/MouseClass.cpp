@@ -6,13 +6,13 @@
 #include <bleedblack/io.h>
 
 #include "Time.h"
+#include "Sddl.h"
 
 extern "C" void _trigger_br(PBLEEDBLACK_INPUT_REQUEST input);
 
 CMouseClass::CMouseClass()
 	: m_ipc(nullptr),
 	  m_hShmMapping(nullptr),
-	  m_hShmEvt(nullptr),
 	  m_hIpcProc(nullptr),
 	  m_hIpcProcThreadHandle(nullptr),
 	  m_bIpc(FALSE),
@@ -24,10 +24,11 @@ CMouseClass::~CMouseClass()
 {
 	if (!m_bIpc)
 		return;
-	
+
 	if (m_ipc)
 	{
-		SetEvent(m_hShmEvt);
+		if (m_ipc->hReady)
+			CloseHandle(m_ipc->hReady);
 		
 		UnmapViewOfFile(m_ipc);
 		DeleteCriticalSection(&m_cs);
@@ -36,12 +37,9 @@ CMouseClass::~CMouseClass()
 	if (m_hShmMapping)
 		CloseHandle(m_hShmMapping);
 
-	if (m_hShmEvt)
-		CloseHandle(m_hShmEvt);
-	
 	if (m_hIpcProc)
 		CloseHandle(m_hIpcProcThreadHandle);
-	
+
 	if (m_hIpcProc)
 		CloseHandle(m_hIpcProc);
 }
@@ -65,7 +63,7 @@ NTSTATUS CMouseClass::Init()
 		ZeroMemory(&sd, sizeof(sd));
 		if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
 			return __NTSTATUS_FROM_WIN32(GetLastError());
-		
+
 		if (!SetSecurityDescriptorDacl(&sd, TRUE, nullptr, FALSE))
 			return __NTSTATUS_FROM_WIN32(GetLastError());
 
@@ -73,7 +71,7 @@ NTSTATUS CMouseClass::Init()
 		ZeroMemory(&sa, sizeof sa);
 		sa.nLength = sizeof sa;
 		sa.lpSecurityDescriptor = &sd;
-		sa.bInheritHandle = FALSE;
+		sa.bInheritHandle = TRUE;
 		
 		m_hShmMapping = CreateFileMappingA(INVALID_HANDLE_VALUE,
 			&sa, PAGE_READWRITE, 0, sizeof BLEEDBLACK_IPC, BLEEDBLACK_IPC_ENDPOINT);
@@ -90,8 +88,8 @@ NTSTATUS CMouseClass::Init()
 		
 		ZeroMemory(m_ipc, sizeof BLEEDBLACK_IPC);
 		
-		m_hShmEvt = CreateEventA(&sa, TRUE, FALSE, BLEEDBLACK_IPC_EVT_NAME);
-		if (!m_hShmEvt)
+		m_ipc->hReady = CreateEventA(&sa, TRUE, FALSE, nullptr);
+		if (!m_ipc->hReady)
 			return __NTSTATUS_FROM_WIN32(GetLastError());
 
 		InitializeCriticalSection(&m_cs);
@@ -104,7 +102,7 @@ NTSTATUS CMouseClass::Init()
 		si.cb = sizeof si;
 
 		if(!CreateProcess(L"blipcsrv.exe", 
-			nullptr, nullptr, nullptr, FALSE, 0, nullptr, nullptr, &si, &pi))
+			nullptr, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &si, &pi))
 		{
 			MessageBox(nullptr, L"Failed to start blipcsrv", L"Error", MB_ICONERROR | MB_OK);
 			return __NTSTATUS_FROM_WIN32(GetLastError());
@@ -125,7 +123,7 @@ NTSTATUS CMouseClass::ProcessRequest(PBLEEDBLACK_INPUT_REQUEST pRequest) const
 	{
 		EnterCriticalSection(const_cast<PCRITICAL_SECTION>(&m_cs));
 		RtlCopyMemory(&m_ipc->Req, pRequest, sizeof BLEEDBLACK_INPUT_REQUEST);
-		const auto result = SetEvent(m_hShmEvt);
+		const auto result = SetEvent(m_ipc->hReady);
 		LeaveCriticalSection(const_cast<PCRITICAL_SECTION>(&m_cs));
 		return result ? STATUS_SUCCESS : STATUS_EVENT_PENDING;
 	}

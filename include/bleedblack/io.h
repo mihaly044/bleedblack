@@ -31,8 +31,8 @@ typedef struct _BLEEDBLACK_INPUT_REQUEST
 
 typedef struct _BLEEDBLACK_IPC
 {
+    HANDLE hReady;
     BLEEDBLACK_INPUT_REQUEST Req;
 } BLEEDBLACK_IPC, *PBLEEDBLACK_IPC;
 
 #define BLEEDBLACK_IPC_ENDPOINT "blipcsrv"
-#define BLEEDBLACK_IPC_EVT_NAME "Global\\blipc"

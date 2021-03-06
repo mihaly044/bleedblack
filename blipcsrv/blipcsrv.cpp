@@ -15,7 +15,6 @@ public:
 
 CMouseClass* g_pMouseClass = nullptr;
 HANDLE g_hShmMapping = nullptr;
-HANDLE g_hShmEvt = nullptr;
 PBLEEDBLACK_IPC g_ipc = nullptr;
 
 void handle_exit()
@@ -26,8 +25,8 @@ void handle_exit()
 	if (g_hShmMapping)
 		CloseHandle(g_hShmMapping);
 
-	if (g_hShmEvt)
-		CloseHandle(g_hShmEvt);
+	if (g_ipc->hReady)
+		CloseHandle(g_ipc->hReady);
 }
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
@@ -57,7 +56,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	}
 
 	g_ipc = static_cast<BLEEDBLACK_IPC*>(MapViewOfFile(g_hShmMapping,
-		PAGE_READWRITE, 0, 0, sizeof BLEEDBLACK_IPC));
+		FILE_MAP_ALL_ACCESS, 0, 0, sizeof BLEEDBLACK_IPC));
 
 	if (g_ipc == nullptr)
 	{
@@ -65,17 +64,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		return EXIT_FAILURE;
 	}
 
-	g_hShmEvt = OpenEventA(SYNCHRONIZE | EVENT_MODIFY_STATE, 
-		FALSE, BLEEDBLACK_IPC_EVT_NAME);
-	if (g_hShmEvt == nullptr)
-	{
-		std::cerr << "Failed to open global event" << std::endl;
-		return EXIT_FAILURE;
-	}
-
 	while (true)
 	{
-		result = WaitForSingleObject(g_hShmEvt, INFINITE);
+		result = WaitForSingleObject(g_ipc->hReady, INFINITE);
 		if (result != WAIT_OBJECT_0)
 		{
 			std::cerr << "Waiting has failed (" << result << ")" << std::endl;
@@ -84,7 +75,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 
 		
 		g_pMouseClass->ProcessRequest(&g_ipc->Req);
-		ResetEvent(g_hShmEvt);
+		ResetEvent(g_ipc->hReady);
 	}
 
 	return EXIT_SUCCESS;
