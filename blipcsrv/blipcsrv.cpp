@@ -82,9 +82,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			return EXIT_FAILURE;
 		}
 
-		if (g_ipc->ParentExiting)
-			return EXIT_SUCCESS;
-
+		
 		g_pMouseClass->ProcessRequest(&g_ipc->Req);
 		ResetEvent(g_hShmEvt);
 	}

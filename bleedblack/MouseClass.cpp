@@ -27,7 +27,6 @@ CMouseClass::~CMouseClass()
 	
 	if (m_ipc)
 	{
-		m_ipc->ParentExiting = TRUE;
 		SetEvent(m_hShmEvt);
 		
 		UnmapViewOfFile(m_ipc);
@@ -187,6 +186,7 @@ NTSTATUS CMouseClass::Move(ULONG_PTR pid, LONG x, LONG y) const
 	BLEEDBLACK_INPUT_REQUEST request;
 	RtlZeroMemory(&request, sizeof request);
 
+	request.ProcessId = pid;
 	request.Move = TRUE;
 	request.MovementX = x;
 	request.MovementY = y;
@@ -199,6 +199,7 @@ NTSTATUS CMouseClass::Click(ULONG_PTR pid, USHORT button, ULONG ReleaseDelayInMi
 	BLEEDBLACK_INPUT_REQUEST request;
 	RtlZeroMemory(&request, sizeof request);
 
+	request.ProcessId = pid;
 	request.Move = FALSE;
 	request.ButtonFlags = button;
 	request.ReleaseDelayInMillis = ReleaseDelayInMilliseconds;

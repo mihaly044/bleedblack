@@ -68,14 +68,14 @@ auto main() -> int
 	//
 	std::cout << "Left click in 3 seconds ..." << std::endl;
 	Sleep(3000);
-	Bleedblack_Click(g_hBleedBlack, myPid, MOUSE_LEFT_BUTTON_DOWN, 30);
+	Bleedblack_Click(g_hBleedBlack, myPid, MOUSE_LEFT_BUTTON_DOWN, 100);
 
 	//
 	// Right click
 	//
 	std::cout << "Right click in 3 seconds ..." << std::endl;
 	Sleep(3000);
-	Bleedblack_Click(g_hBleedBlack, myPid, MOUSE_RIGHT_BUTTON_DOWN, 30);
+	Bleedblack_Click(g_hBleedBlack, myPid, MOUSE_RIGHT_BUTTON_DOWN, 100);
 	
 	//
 	// Make sure you call this function when your app quits
