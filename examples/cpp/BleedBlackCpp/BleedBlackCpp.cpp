@@ -80,5 +80,5 @@ auto main() -> int
 	//
 	// Make sure you call this function when your app quits
 	//
-	Bleedblack_Destroy(g_hBleedBlack);
+	// Bleedblack_Destroy(g_hBleedBlack);
 }
