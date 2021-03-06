@@ -15,19 +15,28 @@
 #include <ntddmou.h>
 #include <bleedblack/bleedblack.h>
 
+HANDLE g_hBleedBlack = nullptr;
+
+void handle_exit()
+{
+	Bleedblack_Destroy(g_hBleedBlack);
+}
+
 auto main() -> int
 {
+	std::atexit(handle_exit);
+	
 	//
 	// Set up connection with the Bleedblack driver
 	//
-	auto* bleedBlackHandle = Bleedblack_Create();
-	if(bleedBlackHandle == nullptr)
+	g_hBleedBlack = Bleedblack_Create();
+	if(g_hBleedBlack == nullptr)
 	{
 		std::cout << "Error!!! Bleedblack_Create returned null" << std::endl;
 		return -1;
 	}
 
-	auto status = Bleedblack_Init(bleedBlackHandle);
+	auto status = Bleedblack_Init(g_hBleedBlack);
 	if(status < 0)
 	{
 		std::cout << "Error!!! Bleedblack_Init has failed with code "
@@ -50,7 +59,7 @@ auto main() -> int
 		int x = static_cast<int>(radius) * cos(i);
 		int y = static_cast<int>(radius) * sin(i);
 
-		Bleedblack_Move(bleedBlackHandle, myPid, x, y);
+		Bleedblack_Move(g_hBleedBlack, myPid, x, y);
 		Sleep(5);
 	}
 
@@ -59,17 +68,17 @@ auto main() -> int
 	//
 	std::cout << "Left click in 3 seconds ..." << std::endl;
 	Sleep(3000);
-	Bleedblack_Click(bleedBlackHandle, myPid, MOUSE_LEFT_BUTTON_DOWN, 30);
+	Bleedblack_Click(g_hBleedBlack, myPid, MOUSE_LEFT_BUTTON_DOWN, 30);
 
 	//
 	// Right click
 	//
 	std::cout << "Right click in 3 seconds ..." << std::endl;
 	Sleep(3000);
-	Bleedblack_Click(bleedBlackHandle, myPid, MOUSE_RIGHT_BUTTON_DOWN, 30);
+	Bleedblack_Click(g_hBleedBlack, myPid, MOUSE_RIGHT_BUTTON_DOWN, 30);
 	
 	//
 	// Make sure you call this function when your app quits
 	//
-	Bleedblack_Destroy(bleedBlackHandle);
+	Bleedblack_Destroy(g_hBleedBlack);
 }

@@ -40,11 +40,17 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BleedBlackCpp", "examples\cpp\BleedBlackCpp\BleedBlackCpp.vcxproj", "{DCDCCF92-89C1-4C21-B409-970CD0CF2D4E}"
 	ProjectSection(ProjectDependencies) = postProject
 		{DC6EA5B3-31BF-44E7-8F04-9364E637A314} = {DC6EA5B3-31BF-44E7-8F04-9364E637A314}
+		{B818A0DA-DE54-470B-82D7-83E5C891274C} = {B818A0DA-DE54-470B-82D7-83E5C891274C}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "csharp", "csharp", "{A78B3DE5-B04C-453D-B2B9-DC638FD833C7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BleedBlackCSharp", "examples\csharp\BleedBlackCSharp\BleedBlackCSharp.csproj", "{0D03D4AD-B834-4BA3-A500-79F7429C5FF5}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B818A0DA-DE54-470B-82D7-83E5C891274C} = {B818A0DA-DE54-470B-82D7-83E5C891274C}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "blipcsrv", "blipcsrv\blipcsrv.vcxproj", "{B818A0DA-DE54-470B-82D7-83E5C891274C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -126,6 +132,16 @@ Global
 		{0D03D4AD-B834-4BA3-A500-79F7429C5FF5}.Release|x64.Build.0 = Release|Any CPU
 		{0D03D4AD-B834-4BA3-A500-79F7429C5FF5}.Release|x86.ActiveCfg = Release|Any CPU
 		{0D03D4AD-B834-4BA3-A500-79F7429C5FF5}.Release|x86.Build.0 = Release|Any CPU
+		{B818A0DA-DE54-470B-82D7-83E5C891274C}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{B818A0DA-DE54-470B-82D7-83E5C891274C}.Debug|x64.ActiveCfg = Debug|x64
+		{B818A0DA-DE54-470B-82D7-83E5C891274C}.Debug|x64.Build.0 = Debug|x64
+		{B818A0DA-DE54-470B-82D7-83E5C891274C}.Debug|x86.ActiveCfg = Debug|Win32
+		{B818A0DA-DE54-470B-82D7-83E5C891274C}.Debug|x86.Build.0 = Debug|Win32
+		{B818A0DA-DE54-470B-82D7-83E5C891274C}.Release|Any CPU.ActiveCfg = Release|Win32
+		{B818A0DA-DE54-470B-82D7-83E5C891274C}.Release|x64.ActiveCfg = Release|x64
+		{B818A0DA-DE54-470B-82D7-83E5C891274C}.Release|x64.Build.0 = Release|x64
+		{B818A0DA-DE54-470B-82D7-83E5C891274C}.Release|x86.ActiveCfg = Release|Win32
+		{B818A0DA-DE54-470B-82D7-83E5C891274C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

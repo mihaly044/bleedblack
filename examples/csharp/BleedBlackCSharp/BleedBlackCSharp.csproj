@@ -34,6 +34,9 @@
     <WarningLevel>4</WarningLevel>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
+  <PropertyGroup>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -50,6 +53,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="app.manifest" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\managed\bleedblack.net\bleedblack.net.csproj">
@@ -63,8 +67,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>call "$(DevEnvDir)..\Tools\VsDevCmd.bat"
-editbin /LARGEADDRESSAWARE:no $(TargetFileName)
-copy /b/v/y $(SolutionDir)x64\$(ConfigurationName)\bleedblack.dll $(TargetDir)bleedblack.dll</PostBuildEvent>
+    <PostBuildEvent>copy /b/v/y $(SolutionDir)x64\$(ConfigurationName)\bleedblack.dll $(TargetDir)bleedblack.dll
+copy /b/v/y $(SolutionDir)x64\$(ConfigurationName)\blipcsrv.exe $(TargetDir)blipcsrv.exe</PostBuildEvent>
   </PropertyGroup>
 </Project>

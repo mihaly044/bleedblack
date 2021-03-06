@@ -23,7 +23,17 @@ typedef struct _BLEEDBLACK_INPUT_REQUEST
 		{
             USHORT ButtonFlags;
             USHORT ButtonData;
+            ULONG  ReleaseDelayInMillis;
 		};
 	};
 	
 } BLEEDBLACK_INPUT_REQUEST, * PBLEEDBLACK_INPUT_REQUEST;
+
+typedef struct _BLEEDBLACK_IPC
+{
+    BOOLEAN ParentExiting;
+    BLEEDBLACK_INPUT_REQUEST Req;
+} BLEEDBLACK_IPC, *PBLEEDBLACK_IPC;
+
+#define BLEEDBLACK_IPC_ENDPOINT "blipcsrv"
+#define BLEEDBLACK_IPC_EVT_NAME "Global\\blipc"
