@@ -3,7 +3,7 @@
 #include "bleedblack/io.h"
 #include <spdlog/sinks/basic_file_sink.h>
 
-class __declspec(dllexport) CMouseClass
+class CMouseClass
 {
 	explicit CMouseClass() noexcept;
 public:
@@ -19,11 +19,12 @@ public:
 
 private:
 	CRITICAL_SECTION m_cs {};
-	PBLEEDBLACK_IPC m_ipc;
+	PBLEEDBLACK_INPUT_REQUEST m_req;
 	HANDLE m_hShmMapping;
 	HANDLE m_hIpcProc;
-	HANDLE m_hIpcProcThreadHandle;
 	HANDLE m_hJob;
+	HANDLE m_hReq;
+	HANDLE m_hAck;
 	BOOL m_bIpc;
 	BOOL m_bIpcReady;
 

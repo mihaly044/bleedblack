@@ -55,6 +55,17 @@ BLEEDBLACK_C_API NTSTATUS Bleedblack_Click(
 	return INSTANCE(pHandle)->Click(ulPid, ushButtonFlags, ulReleaseDelayInMilliseconds);
 }
 
+BLEEDBLACK_C_API NTSTATUS Bleedblack_Process(
+	_In_ PVOID pHandle,
+	_In_ PVOID pRequest
+)
+{
+	if (pHandle == nullptr)
+		return STATUS_INVALID_HANDLE;
+
+	return INSTANCE(pHandle)->ProcessRequest(static_cast<PBLEEDBLACK_INPUT_REQUEST>(pRequest));
+}
+
 BLEEDBLACK_C_API VOID Bleedblack_Destroy(
 	_In_ PVOID pHandle
 )

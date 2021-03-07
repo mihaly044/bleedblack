@@ -31,6 +31,11 @@ BLEEDBLACK_C_API NTSTATUS Bleedblack_Click(
 	_In_ ULONG ulReleaseDelayInMilliseconds
 );
 
+BLEEDBLACK_C_API NTSTATUS Bleedblack_Process(
+	_In_ PVOID pHandle,
+	_In_ PVOID pRequest
+);
+
 BLEEDBLACK_C_API VOID Bleedblack_Destroy(
 	_In_ PVOID pHandle
 );

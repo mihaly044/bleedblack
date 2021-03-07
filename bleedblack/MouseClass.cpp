@@ -11,15 +11,16 @@
 extern "C" void _trigger_br(PBLEEDBLACK_INPUT_REQUEST input);
 
 CMouseClass::CMouseClass() noexcept
-	: m_ipc(nullptr),
+	: m_req(nullptr),
 	  m_hShmMapping(nullptr),
 	  m_hIpcProc(nullptr),
-	  m_hIpcProcThreadHandle(nullptr),
 	  m_hJob(nullptr),
+	  m_hReq(nullptr),
+	  m_hAck(nullptr),
 	  m_bIpc(FALSE),
 	  m_bIpcReady(FALSE)
 {
-	if(!m_logger)
+	if (!m_logger)
 	{
 		const auto max_size = 1048576 * 5;
 		const auto max_files = 3;
@@ -35,20 +36,20 @@ CMouseClass::~CMouseClass()
 	if (!m_bIpc)
 		return;
 
-	if (m_ipc)
+	if (m_req)
 	{
-		if (m_ipc->hReady)
-			CloseHandle(m_ipc->hReady);
-		
-		UnmapViewOfFile(m_ipc);
+		UnmapViewOfFile(m_req);
 		DeleteCriticalSection(&m_cs);
 	}
 
+	if (m_hReq)
+		CloseHandle(m_hReq);
+
+	if (m_hAck)
+		CloseHandle(m_hAck);
+
 	if (m_hShmMapping)
 		CloseHandle(m_hShmMapping);
-
-	if (m_hIpcProc)
-		CloseHandle(m_hIpcProcThreadHandle);
 
 	if (m_hJob)
 		CloseHandle(m_hJob);
@@ -72,7 +73,7 @@ NTSTATUS CMouseClass::Init()
 
 	if (nth->FileHeader.Characteristics & IMAGE_FILE_LARGE_ADDRESS_AWARE)
 	{
-		logger->info("Image has IMAGE_FILE_LARGE_ADDRESS_AWARE flag, enabling IPC proxy");
+		logger->info("Enabling IPC proxy");
 		
 		// Init IPC
 		m_bIpc = TRUE;
@@ -101,7 +102,7 @@ NTSTATUS CMouseClass::Init()
 		sa.bInheritHandle = TRUE;
 		
 		m_hShmMapping = CreateFileMappingA(INVALID_HANDLE_VALUE,
-			&sa, PAGE_READWRITE, 0, sizeof BLEEDBLACK_IPC, BLEEDBLACK_IPC_ENDPOINT);
+			&sa, PAGE_READWRITE, 0, sizeof BLEEDBLACK_INPUT_REQUEST, nullptr);
 
 		if (!m_hShmMapping)
 		{
@@ -111,7 +112,7 @@ NTSTATUS CMouseClass::Init()
 		}
 		
 		PVOID shm = MapViewOfFile(m_hShmMapping, 
-			FILE_MAP_ALL_ACCESS, 0, 0, sizeof BLEEDBLACK_IPC);
+			FILE_MAP_ALL_ACCESS, 0, 0, sizeof BLEEDBLACK_INPUT_REQUEST);
 		if(!shm)
 		{
 			dwError = GetLastError();
@@ -119,21 +120,29 @@ NTSTATUS CMouseClass::Init()
 			return __NTSTATUS_FROM_WIN32(dwError);
 		}
 		
-		m_ipc = static_cast<BLEEDBLACK_IPC*>(shm);
+		m_req = static_cast<BLEEDBLACK_INPUT_REQUEST*>(shm);
 		
-		ZeroMemory(m_ipc, sizeof BLEEDBLACK_IPC);
+		ZeroMemory(m_req, sizeof BLEEDBLACK_INPUT_REQUEST);
 		
-		m_ipc->hReady = CreateEventA(&sa, TRUE, FALSE, nullptr);
-		if (!m_ipc->hReady)
+		m_hReq = CreateEventA(&sa, TRUE, FALSE, nullptr);
+		if (!m_hReq)
 		{
 			dwError = GetLastError();
-			logger->critical("Failed to create event, error {}", dwError);
+			logger->critical("Failed to create req event, error {}", dwError);
+			return __NTSTATUS_FROM_WIN32(dwError);
+		}
+
+		m_hAck = CreateEventA(&sa, TRUE, FALSE, nullptr);
+		if (!m_hAck)
+		{
+			dwError = GetLastError();
+			logger->critical("Failed to create ack event, error {}", dwError);
 			return __NTSTATUS_FROM_WIN32(dwError);
 		}
 
 		InitializeCriticalSection(&m_cs);
 
-		STARTUPINFO si;
+		STARTUPINFOW si;
 		PROCESS_INFORMATION pi;
 
 		ZeroMemory(&si, sizeof si);
@@ -151,9 +160,12 @@ NTSTATUS CMouseClass::Init()
 		DWORD dwCreationFlags = CREATE_SUSPENDED;
 		if (bIsProcessInJob)
 			dwCreationFlags |= CREATE_BREAKAWAY_FROM_JOB;
+
+		WCHAR buffer[MAX_PATH];
+		wsprintfW(buffer, L"blipcsrv.exe %I64u %I64u %I64u", (ULONG_PTR)m_hShmMapping, (ULONG_PTR)m_hReq, (ULONG_PTR)m_hAck);
 		
 		if(!CreateProcess(L"blipcsrv.exe", 
-			nullptr, nullptr, nullptr, TRUE, dwCreationFlags, nullptr, nullptr, &si, &pi))
+			buffer, nullptr, nullptr, TRUE, dwCreationFlags, nullptr, nullptr, &si, &pi))
 		{
 			dwError = GetLastError();
 			logger->critical("Failed to spawn proxy process {}", dwError);
@@ -192,7 +204,6 @@ NTSTATUS CMouseClass::Init()
 		ResumeThread(pi.hThread);
 
 		m_hIpcProc = pi.hProcess;
-		m_hIpcProcThreadHandle = pi.hThread;
 		
 		m_bIpcReady = TRUE;
 	}
@@ -202,13 +213,19 @@ NTSTATUS CMouseClass::Init()
 
 NTSTATUS CMouseClass::ProcessRequest(PBLEEDBLACK_INPUT_REQUEST pRequest) const
 {
-	if(m_ipc)
+	if(m_req)
 	{
 		EnterCriticalSection(const_cast<PCRITICAL_SECTION>(&m_cs));
-		RtlCopyMemory(&m_ipc->Req, pRequest, sizeof BLEEDBLACK_INPUT_REQUEST);
-		const auto result = SetEvent(m_ipc->hReady);
+		RtlCopyMemory(m_req, pRequest, sizeof BLEEDBLACK_INPUT_REQUEST);
+		const auto result = SetEvent(m_hReq);
+
+		const auto dwResult = WaitForSingleObject(m_hAck, 2000);
+		if(dwResult != WAIT_OBJECT_0)
+			m_logger->warn("Waiting for ack has failed {}", result);
+		
 		LeaveCriticalSection(const_cast<PCRITICAL_SECTION>(&m_cs));
-		return result ? STATUS_SUCCESS : STATUS_EVENT_PENDING;
+		ResetEvent(m_hAck);
+		return result && dwResult == STATUS_WAIT_0 ? STATUS_SUCCESS : STATUS_EVENT_PENDING;
 	}
 	
 	if(pRequest->Move)
