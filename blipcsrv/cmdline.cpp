@@ -3,12 +3,14 @@
 
 #include <memory>
 
+#include "logging.hpp"
+
 std::shared_ptr<BLIPCSRV_CTX> CommandLineToContext()
 {
 	auto *const commandLine = GetCommandLineW();
 	if (!commandLine)
 	{
-		// Could not get command line
+		logger->critical("Could not get command line, GetLastError() = {}", GetLastError());
 		return nullptr;
 	}
 
@@ -16,7 +18,7 @@ std::shared_ptr<BLIPCSRV_CTX> CommandLineToContext()
 	auto* const argv = CommandLineToArgvW(commandLine, &argc);
 	if(argc != InputParamKindMax)
 	{
-		// Invalid number of args
+		logger->critical("Count of parameters seems invalid");
 		return nullptr;
 	}
 
@@ -29,10 +31,11 @@ std::shared_ptr<BLIPCSRV_CTX> CommandLineToContext()
 		case ShmHandle: context->hShmMapping = handle; break;
 		case ReqHandle: context->hReq = handle; break;
 		case AckHandle: context->hAck = handle; break;
-		default: throw std::exception("Invalid handle"); /* TODO: Warn*/
+		default: logger->warn("Invalid handle. Type = {} Value = 0x{0:x}", i, handle);
 		}
 	}
 
+	logger->info("Parsed context from the command line");
 	return context;
 }
 
@@ -43,4 +46,5 @@ void ClearCommandLineArgs()
 	p->CommandLine.Length = 0;
 	p->CommandLine.MaximumLength = 0;
 	RtlFreeUnicodeString(&p->CommandLine);
+	logger->info("Cleared command line args");
 }
