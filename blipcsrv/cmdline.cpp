@@ -46,5 +46,4 @@ void ClearCommandLineArgs()
 	p->CommandLine.Length = 0;
 	p->CommandLine.MaximumLength = 0;
 	RtlFreeUnicodeString(&p->CommandLine);
-	logger->info("Cleared command line args");
 }
