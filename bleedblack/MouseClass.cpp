@@ -2,15 +2,15 @@
 #include "MouseClass.h"
 
 #include <ntddmou.h>
-#include <strsafe.h>
 #include <bleedblack/io.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/rotating_file_sink.h>
 
 #include "Time.h"
-#include "Sddl.h"
 
 extern "C" void _trigger_br(PBLEEDBLACK_INPUT_REQUEST input);
 
-CMouseClass::CMouseClass()
+CMouseClass::CMouseClass() noexcept
 	: m_ipc(nullptr),
 	  m_hShmMapping(nullptr),
 	  m_hIpcProc(nullptr),
@@ -19,6 +19,15 @@ CMouseClass::CMouseClass()
 	  m_bIpc(FALSE),
 	  m_bIpcReady(FALSE)
 {
+	if(!m_logger)
+	{
+		const auto max_size = 1048576 * 5;
+		const auto max_files = 3;
+		m_logger = spdlog::rotating_logger_mt("bleedblack", "bleedblack.log", max_size, max_files);
+
+		spdlog::flush_every(std::chrono::seconds(5));
+		spdlog::flush_on(spdlog::level::warn);
+	}
 }
 
 CMouseClass::~CMouseClass()
@@ -55,21 +64,35 @@ CMouseClass* CMouseClass::Create()
 
 NTSTATUS CMouseClass::Init()
 {
-	auto* dosh = static_cast<IMAGE_DOS_HEADER*>(NtCurrentPeb()->ImageBaseAddress);
-	auto* nth = reinterpret_cast<IMAGE_NT_HEADERS*>(reinterpret_cast<PUCHAR>(dosh) + dosh->e_lfanew);
+	auto *logger = m_logger.get();
+	logger->info("Starting up");
+
+	PIMAGE_DOS_HEADER dosh = static_cast<IMAGE_DOS_HEADER*>(NtCurrentPeb()->ImageBaseAddress);
+	PIMAGE_NT_HEADERS nth = reinterpret_cast<IMAGE_NT_HEADERS*>(reinterpret_cast<PUCHAR>(dosh) + dosh->e_lfanew);
 
 	if (nth->FileHeader.Characteristics & IMAGE_FILE_LARGE_ADDRESS_AWARE)
 	{
+		logger->info("Image has IMAGE_FILE_LARGE_ADDRESS_AWARE flag, enabling IPC proxy");
+		
 		// Init IPC
 		m_bIpc = TRUE;
 
 		SECURITY_DESCRIPTOR sd;
 		ZeroMemory(&sd, sizeof(sd));
+		DWORD dwError;
 		if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
-			return __NTSTATUS_FROM_WIN32(GetLastError());
-
+		{
+			dwError = GetLastError();
+			logger->critical("Failed to initialize security descriptor, error {}", dwError);
+			return __NTSTATUS_FROM_WIN32(dwError);
+		}
+			
 		if (!SetSecurityDescriptorDacl(&sd, TRUE, nullptr, FALSE))
-			return __NTSTATUS_FROM_WIN32(GetLastError());
+		{
+			dwError = GetLastError();
+			logger->critical("Failed to set security descriptor, error {}", dwError);
+			return __NTSTATUS_FROM_WIN32(dwError);
+		}
 
 		SECURITY_ATTRIBUTES sa;
 		ZeroMemory(&sa, sizeof sa);
@@ -81,12 +104,20 @@ NTSTATUS CMouseClass::Init()
 			&sa, PAGE_READWRITE, 0, sizeof BLEEDBLACK_IPC, BLEEDBLACK_IPC_ENDPOINT);
 
 		if (!m_hShmMapping)
-			return __NTSTATUS_FROM_WIN32(GetLastError());
-
-		auto* shm = MapViewOfFile(m_hShmMapping, 
+		{
+			dwError = GetLastError();
+			logger->critical("Failed to create shared memory mapping, error {}", dwError);
+			return __NTSTATUS_FROM_WIN32(dwError);
+		}
+		
+		PVOID shm = MapViewOfFile(m_hShmMapping, 
 			FILE_MAP_ALL_ACCESS, 0, 0, sizeof BLEEDBLACK_IPC);
 		if(!shm)
-			return __NTSTATUS_FROM_WIN32(GetLastError());
+		{
+			dwError = GetLastError();
+			logger->critical("Failed to open shared memory, error {}", dwError);
+			return __NTSTATUS_FROM_WIN32(dwError);
+		}
 		
 		m_ipc = static_cast<BLEEDBLACK_IPC*>(shm);
 		
@@ -94,7 +125,11 @@ NTSTATUS CMouseClass::Init()
 		
 		m_ipc->hReady = CreateEventA(&sa, TRUE, FALSE, nullptr);
 		if (!m_ipc->hReady)
-			return __NTSTATUS_FROM_WIN32(GetLastError());
+		{
+			dwError = GetLastError();
+			logger->critical("Failed to create event, error {}", dwError);
+			return __NTSTATUS_FROM_WIN32(dwError);
+		}
 
 		InitializeCriticalSection(&m_cs);
 
@@ -107,7 +142,11 @@ NTSTATUS CMouseClass::Init()
 
 		BOOL bIsProcessInJob;
 		if(!IsProcessInJob(GetCurrentProcess(), nullptr, &bIsProcessInJob))
-			return __NTSTATUS_FROM_WIN32(GetLastError());
+		{
+			dwError = GetLastError();
+			logger->critical("IsProcessInJob error {}", dwError);
+			return __NTSTATUS_FROM_WIN32(dwError);
+		}
 
 		DWORD dwCreationFlags = CREATE_SUSPENDED;
 		if (bIsProcessInJob)
@@ -116,21 +155,39 @@ NTSTATUS CMouseClass::Init()
 		if(!CreateProcess(L"blipcsrv.exe", 
 			nullptr, nullptr, nullptr, TRUE, dwCreationFlags, nullptr, nullptr, &si, &pi))
 		{
-			MessageBox(nullptr, L"Failed to start blipcsrv", L"Error", MB_ICONERROR | MB_OK);
-			return __NTSTATUS_FROM_WIN32(GetLastError());
+			dwError = GetLastError();
+			logger->critical("Failed to spawn proxy process {}", dwError);
+			
+			return __NTSTATUS_FROM_WIN32(dwError);
 		}
 
 		m_hJob = CreateJobObjectA(nullptr, nullptr);
 		if(!m_hJob)
-			return __NTSTATUS_FROM_WIN32(GetLastError());
+		{
+			dwError = GetLastError();
+			logger->critical("Failed to create job object {}", dwError);
+
+			return __NTSTATUS_FROM_WIN32(dwError);
+		}
 		
 		JOBOBJECT_EXTENDED_LIMIT_INFORMATION jeli = { 0 };
 		jeli.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
 		if(!SetInformationJobObject(m_hJob, 
 			JobObjectExtendedLimitInformation, &jeli, sizeof jeli))
-			return __NTSTATUS_FROM_WIN32(GetLastError());
+		{
+			dwError = GetLastError();
+			logger->critical("SetInformationJobObject error {}", dwError);
 
-		AssignProcessToJobObject(m_hJob, pi.hProcess);
+			return __NTSTATUS_FROM_WIN32(dwError);
+		}
+
+		if(!AssignProcessToJobObject(m_hJob, pi.hProcess))
+		{
+			dwError = GetLastError();
+			logger->critical("AssignProcessToJobObject error {}", dwError);
+
+			return __NTSTATUS_FROM_WIN32(dwError);
+		}
 
 		ResumeThread(pi.hThread);
 

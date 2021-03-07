@@ -1,9 +1,11 @@
 #pragma once
+
 #include "bleedblack/io.h"
+#include <spdlog/sinks/basic_file_sink.h>
 
 class __declspec(dllexport) CMouseClass
 {
-	explicit CMouseClass();
+	explicit CMouseClass() noexcept;
 public:
 	static CMouseClass* Create();
 	NTSTATUS Init();
@@ -24,5 +26,7 @@ private:
 	HANDLE m_hJob;
 	BOOL m_bIpc;
 	BOOL m_bIpcReady;
+
+	std::shared_ptr<spdlog::logger> m_logger;
 };
 
