@@ -3,7 +3,6 @@
 #include "pch.h"
 #include "cmdline.hpp"
 #include "ipc.hpp"
-#include "logging.hpp"
 
 int APIENTRY wWinMain(
 	_In_		HINSTANCE hInstance,
@@ -11,7 +10,13 @@ int APIENTRY wWinMain(
 	_In_		LPWSTR lpCmdLine,
 	_In_		INT nCmdShow)
 {
-	InitializeLogger();
+	CreateDirectory(L"logs", nullptr);
+	const auto max_size = 1048576 * 5;
+	const auto max_files = 3;
+	plog::init(plog::info, "logs\\blipcsrv.log", max_size, max_files);
+	
+	PLOG_INFO << "Starting up";
+	
 	ClearCommandLineArgs();
 
 	auto context = IpcInitialize();
@@ -22,7 +27,7 @@ int APIENTRY wWinMain(
 		const auto status = Bleedblack_Process(context->hBleedblack, context->sharedData);
 		if(!NT_SUCCESS(status))
 		{
-			logger->warn("Bleedblack_Process status {:08x}", status);
+			PLOG_WARNING.printf("Bleedblack_Process status %08x", status);
 		}
 
 		return true;

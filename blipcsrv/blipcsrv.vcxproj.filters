@@ -23,9 +23,6 @@
     <ClCompile Include="cmdline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="logging.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="context.hpp">
@@ -38,9 +35,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="cmdline.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="logging.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

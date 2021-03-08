@@ -27,9 +27,6 @@
     <ClInclude Include="MouseClass.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="logging.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -42,9 +39,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="bleedblack.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="logging.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -11,8 +11,11 @@
 #pragma warning(disable: 4005)
 #include <Windows.h>
 #include <ntstatus.h>
+
 #include <ntos/ntos.h>
 
 #include <bleedblack/bleedblack.h>
 #include <bleedblack/io.h>
+
+#include <plog/Log.h>
 #endif //PCH_H

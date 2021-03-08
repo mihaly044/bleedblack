@@ -1,6 +1,5 @@
 // dllmain.cpp : Defines the entry point for the DLL application.
 #include "pch.h"
-#include "logging.hpp"
 
 BOOL APIENTRY DllMain(HMODULE hModule,
     DWORD  ul_reason_for_call,
@@ -10,7 +9,11 @@ BOOL APIENTRY DllMain(HMODULE hModule,
     switch (ul_reason_for_call)
     {
     case DLL_PROCESS_ATTACH:
-        InitializeLogger();
+        //
+        // Initialize logging
+        //
+        CreateDirectory(L"logs", nullptr);
+        plog::init(plog::info, "logs\\bleedblack.log", 1048576 * 5 /* 5 MB */, 3);
         break;
     case DLL_THREAD_ATTACH:
     case DLL_THREAD_DETACH:

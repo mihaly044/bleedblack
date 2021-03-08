@@ -12,4 +12,6 @@
 #include <Windows.h>
 #include <ntstatus.h>
 #include <ntos/ntos.h>
+
+#include <plog/Log.h>
 #endif //PCH_H
