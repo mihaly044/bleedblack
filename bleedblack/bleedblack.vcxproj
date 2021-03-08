@@ -176,12 +176,14 @@
     <None Include="cpp.hint" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Compat.h" />
     <ClInclude Include="MouseClass.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Time.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="bleedblack.cpp" />
+    <ClCompile Include="Compat.cpp" />
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="MouseClass.cpp" />
     <ClCompile Include="pch.cpp">
