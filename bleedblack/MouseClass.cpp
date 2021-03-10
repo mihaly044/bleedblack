@@ -27,6 +27,7 @@ CMouseClass::~CMouseClass()
 
 	if (m_req)
 	{
+		VirtualUnlock(static_cast<PVOID>(m_req), sizeof BLEEDBLACK_INPUT_REQUEST);
 		UnmapViewOfFile(m_req);
 		DeleteCriticalSection(&m_cs);
 	}
@@ -105,6 +106,13 @@ NTSTATUS CMouseClass::InitIpc()
 	{
 		dwError = GetLastError();
 		PLOG_FATAL << "Failed to open shared memory, GetLastError() = " << dwError;
+		return __NTSTATUS_FROM_WIN32(dwError);
+	}
+
+	if(!VirtualLock(shm, sizeof BLEEDBLACK_INPUT_REQUEST))
+	{
+		dwError = GetLastError();
+		PLOG_FATAL << "Failed to lock memory, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
