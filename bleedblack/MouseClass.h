@@ -1,7 +1,6 @@
 #pragma once
 
 #include "bleedblack/io.h"
-#include <spdlog/sinks/basic_file_sink.h>
 
 class CMouseClass
 {
