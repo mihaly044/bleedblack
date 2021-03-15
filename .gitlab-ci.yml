@@ -8,6 +8,7 @@ build_windows:
   artifacts:
     paths:
       - x64\Release
+      - examples\csharp\BleedBlackCSharp\bin\Release
     expire_in: 1 week
   tags:
     - windows
