@@ -1,0 +1,13 @@
+build_windows:
+  stage: build
+  script:
+    - git submodule sync
+    - git submodule update --init --recursive
+    - '& $vcpkg integrate install'
+    - '& $msbuild -p:Configuration=Release -p:Platform=x64 -r'
+  artifacts:
+    paths:
+      - x64\Release
+    expire_in: 1 week
+  tags:
+    - windows
