@@ -339,3 +339,4 @@ ASALocalRun/
 # BeatPulse healthcheck temp database
 healthchecksdb
 /bleedblack/vcpkg_installed
+/blipcsrv/vcpkg_installed
