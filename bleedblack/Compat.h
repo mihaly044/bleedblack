@@ -1,4 +1,4 @@
 #pragma once
 
-std::vector<std::wstring> GetNonDefaultUpperFilters();
+NTSTATUS GetNonDefaultUpperFilters(std::vector<std::wstring>& filters);
 NTSTATUS UninstallUpperFilter(LPWSTR lpFilterName);

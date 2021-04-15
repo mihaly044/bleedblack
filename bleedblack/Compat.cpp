@@ -17,7 +17,7 @@ static NTSTATUS OpenSubkey(ACCESS_MASK desiredAccess, HANDLE hkParent, UNICODE_S
 	return NtOpenKey(phkSubkey, desiredAccess, &obja);
 }
 
-static std::unique_ptr<BYTE[]> QueryPartialInformation(LPCWSTR lpValueName, HANDLE hkKey)
+static NTSTATUS QueryPartialInformation(LPCWSTR lpValueName, HANDLE hkKey, std::vector<BYTE>& data)
 {
 	ULONG resultLength;
 	UNICODE_STRING szValueName;
@@ -30,24 +30,21 @@ static std::unique_ptr<BYTE[]> QueryPartialInformation(LPCWSTR lpValueName, HAND
 		// TODO: Is this needed?
 		resultLength += sizeof KEY_VALUE_PARTIAL_INFORMATION;
 
-		auto buf = std::make_unique<BYTE[]>(resultLength);
+		data.resize(resultLength);
 		status = NtQueryValueKey(hkKey, 
-			&szValueName, KeyValuePartialInformation, static_cast<PVOID>(buf.get()), resultLength, &resultLength);
+			&szValueName, KeyValuePartialInformation, &data[0], resultLength, &resultLength);
 		if(NT_SUCCESS(status))
-		{
-			return buf;
-		}
+			return status;
 
 		PLOG_ERROR.printf("Got unexpected status from NtQueryValueKey NTSTATUS %08X", status);
 	}
 
 	PLOG_ERROR.printf("Got unexpected status from NtQueryValueKey NTSTATUS %08X", status);
-	return {};
+	return status;
 }
 
-std::vector<std::wstring> GetNonDefaultUpperFilters()
+NTSTATUS GetNonDefaultUpperFilters(std::vector<std::wstring>& filters)
 {
-	std::vector<std::wstring> results;
 	HANDLE hkControl = nullptr;
 	auto status = OpenControlKey(KEY_ALL_ACCESS, &hkControl);
 	
@@ -61,44 +58,54 @@ std::vector<std::wstring> GetNonDefaultUpperFilters()
 	HANDLE hkMouseClass;
 	RtlInitUnicodeString(&szMouseClass, L"Class\\{4d36e96f-e325-11ce-bfc1-08002be10318}");
 	status = OpenSubkey(KEY_ALL_ACCESS, hkControl, &szMouseClass, &hkMouseClass);
-	
-	if(NT_SUCCESS(status))
+
+	if (NT_SUCCESS(status))
 	{
-		const auto classPartialInformationBuf = QueryPartialInformation(L"Class", hkMouseClass);
-		if(classPartialInformationBuf)
+		std::vector<BYTE> data;
+		status = QueryPartialInformation(L"Class", hkMouseClass, data);
+
+		if (NT_SUCCESS(status))
 		{
-			const auto *classPartialInformation = reinterpret_cast<KEY_VALUE_PARTIAL_INFORMATION*>(classPartialInformationBuf.get());
-			const auto *classValue = reinterpret_cast<LPCWSTR>(classPartialInformation->Data);
+			const auto* classNameInfo = reinterpret_cast<KEY_VALUE_PARTIAL_INFORMATION*>(&data[0]);
+			const auto* classNameValue = reinterpret_cast<LPCWSTR>(classNameInfo->Data);
 
-			if(_wcsicmp(classValue, L"Mouse") == 0)
+			if (_wcsicmp(classNameValue, L"Mouse") == 0)
 			{
-				const auto upperFiltersInformationBuf = QueryPartialInformation(L"UpperFilters", hkMouseClass);
-				if(upperFiltersInformationBuf)
-				{
-					const auto* upperFiltersPartialInformation = reinterpret_cast<KEY_VALUE_PARTIAL_INFORMATION*>(upperFiltersInformationBuf.get());
-					const auto* upperFiltersValue = reinterpret_cast<LPCWSTR>(upperFiltersPartialInformation->Data);
+				status = QueryPartialInformation(L"UpperFilters", hkMouseClass, data);
+				
+				const auto* upperFiltersInfo = reinterpret_cast<KEY_VALUE_PARTIAL_INFORMATION*>(&data[0]);
+				auto* upperFiltersValue = reinterpret_cast<const wchar_t*>(upperFiltersInfo->Data);
 
-					std::wistringstream stream(upperFiltersValue);
-					std::wstring line;
-					while (std::getline(stream, line))
-						if (!line.empty() && line != std::wstring(L"mouclass"))
-							results.push_back(line);
+				if (NT_SUCCESS(status))
+				{
+					const wchar_t* ptr = upperFiltersValue;
+					while (*ptr != L'\0')
+					{
+						const size_t len = wcslen(ptr);
+
+						if (wcscmp(ptr, L"mouclass") != 0)
+						{
+							filters.push_back(std::wstring(ptr, len));
+						}
+						
+						ptr += len + 1;
+					}
 				}
 				else
 				{
-					PLOG_ERROR << "Failed to query upper filters information";
+					PLOG_WARNING.printf("Failed to query for UpperFilters NTSTATUS %08X", status);
 				}
 			}
 			else
 			{
-				PLOG_ERROR << "Got unexpected class name " << classValue;
+				PLOG_ERROR << "Got unexpected class name " << classNameValue;
 			}
 		}
 		else
 		{
 			PLOG_ERROR << "Failed to query class name information";
 		}
-		
+
 		NtClose(hkMouseClass);
 	}
 	else
@@ -107,7 +114,7 @@ std::vector<std::wstring> GetNonDefaultUpperFilters()
 	}
 
 	NtClose(hkControl);
-	return results;
+	return status;
 }
 
 NTSTATUS UninstallUpperFilter(LPWSTR lpFilterName)
