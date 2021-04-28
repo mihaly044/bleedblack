@@ -51,7 +51,7 @@ NTSTATUS GetNonDefaultUpperFilters(std::vector<std::wstring>& filters)
 	if(!NT_SUCCESS(status))
 	{
 		PLOG_WARNING.printf("OpenControlKey() failed NTSTATUS %08X", status);
-		return {};
+		return status;
 	}
 
 	UNICODE_STRING szMouseClass;
