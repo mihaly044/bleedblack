@@ -1,6 +1,4 @@
-# Internal registry containing the required build tools
-# DO NOT ALTER
-image: local.registry:5000/buildtools2019:latest
+image: registry.mihaly.me/buildtools2019:latest
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
