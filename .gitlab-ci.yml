@@ -1,4 +1,4 @@
-image: registry.mihaly.me/buildtools2019:latest
+image: gitlab.mihaly.me:5050/mihaly/buildtools2019:latest
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
