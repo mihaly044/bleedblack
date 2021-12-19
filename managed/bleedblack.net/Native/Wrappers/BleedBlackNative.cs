@@ -5,21 +5,21 @@ namespace bleedblack.net.Native.Wrappers
 {
 	internal unsafe class BleedBlackNative
 	{
-		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
 		internal static extern void* Bleedblack_Create();
 
-		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
 		internal static extern NtStatus Bleedblack_Init(
 			void* pHandle
 		);
 
-		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
 		[return: MarshalAs(UnmanagedType.Bool)]
 		internal static extern bool Bleedblack_IsReady(
 			void* pHandle
 		);
 
-		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
 		internal static extern NtStatus Bleedblack_Move(
 			void* pHandle,
 			[MarshalAs(UnmanagedType.U8)] ulong ulPid,
@@ -27,7 +27,7 @@ namespace bleedblack.net.Native.Wrappers
 			long y
 		);
 
-        [DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+        [DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
         internal static extern NtStatus Bleedblack_Click(
             void* pHandle,
             [MarshalAs(UnmanagedType.U8)] ulong ulPid,
@@ -36,7 +36,7 @@ namespace bleedblack.net.Native.Wrappers
 
 		);
 
-		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+		[DllImport("bleedblack.dll", CharSet = CharSet.Unicode, SetLastError = true, CallingConvention = CallingConvention.Cdecl)]
 		internal static extern void Bleedblack_Destroy(
 			void* pHandle
 		);
