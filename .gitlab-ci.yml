@@ -1,4 +1,4 @@
-image: gitlab.mihaly.me:5050/mihaly/buildtools2019:latest
+image: cr.gluon.hu/mihaly/buildtools2019:wdk
 
 cache:
   key: ${CI_COMMIT_REF_SLUG}
