@@ -18,4 +18,5 @@
 #include <bleedblack/io.h>
 
 #include <plog/Log.h>
+#include <plog/Initializers/RollingFileInitializer.h>
 #endif //PCH_H
