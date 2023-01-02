@@ -1,3 +1,6 @@
 [submodule "managed/KdlCore.Native.Commons"]
 	path = managed/KdlCore.Native.Commons
 	url = https://gitlab.gluon.hu/mihaly/kdlcore-native-commons
+[submodule "include/wil"]
+	path = include/wil
+	url = https://github.com/Microsoft/wil

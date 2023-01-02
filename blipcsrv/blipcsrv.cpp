@@ -10,13 +10,6 @@ int APIENTRY wWinMain(
 	_In_		LPWSTR lpCmdLine,
 	_In_		INT nCmdShow)
 {
-	CreateDirectory(L"logs", nullptr);
-	const auto max_size = 1048576 * 5;
-	const auto max_files = 3;
-	plog::init(plog::info, "logs\\blipcsrv.log", max_size, max_files);
-	
-	PLOG_INFO << "Starting up";
-	
 	ClearCommandLineArgs();
 
 	auto context = IpcInitialize();
@@ -25,13 +18,8 @@ int APIENTRY wWinMain(
 	IpcRunSynchronous(context.get(), [context]() -> bool
 	{
 		const auto status = Bleedblack_Process(context->hBleedblack, context->sharedData);
-		if(!NT_SUCCESS(status))
-		{
-			PLOG_WARNING.printf("Bleedblack_Process status %08x", status);
-		}
-
+		LOG_IF_NTSTATUS_FAILED(status);
 		return true;
-		
 	}, INFINITE);
 
 

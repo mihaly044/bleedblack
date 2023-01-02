@@ -13,6 +13,5 @@
 #include <ntstatus.h>
 #include <ntos/ntos.h>
 
-#include <plog/Log.h>
-#include <plog/Initializers/RollingFileInitializer.h>
+#include <wil/result.h>
 #endif //PCH_H

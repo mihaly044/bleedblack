@@ -6,6 +6,8 @@
 
 #include "Time.h"
 
+#include <wil/resource.h>
+
 extern "C" void _trigger_br(PBLEEDBLACK_INPUT_REQUEST input);
 
 CMouseClass::CMouseClass() noexcept
@@ -62,7 +64,7 @@ BOOL CMouseClass::NeedIpc()
 
 NTSTATUS CMouseClass::InitIpc()
 {
-	PLOG_INFO << "Enabling IPC proxy";
+	// PLOG_INFO << "Enabling IPC proxy";
 
 	// Init IPC
 	m_bIpc = TRUE;
@@ -73,14 +75,14 @@ NTSTATUS CMouseClass::InitIpc()
 	if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION))
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "Failed to initialize security descriptor, GetLastError() = " << dwError;
+		// PLOG_FATAL << "Failed to initialize security descriptor, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
 	if (!SetSecurityDescriptorDacl(&sd, TRUE, nullptr, FALSE))
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "Failed to set security descriptor, GetLastError() = " << dwError;
+		// PLOG_FATAL << "Failed to set security descriptor, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
@@ -96,7 +98,7 @@ NTSTATUS CMouseClass::InitIpc()
 	if (!m_hShmMapping)
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "Failed to create shared memory mapping, GetLastError() = " << dwError;
+		// PLOG_FATAL << "Failed to create shared memory mapping, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
@@ -105,14 +107,14 @@ NTSTATUS CMouseClass::InitIpc()
 	if (!shm)
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "Failed to open shared memory, GetLastError() = " << dwError;
+		// PLOG_FATAL << "Failed to open shared memory, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
 	if(!VirtualLock(shm, sizeof BLEEDBLACK_INPUT_REQUEST))
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "Failed to lock memory, GetLastError() = " << dwError;
+		// PLOG_FATAL << "Failed to lock memory, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
@@ -124,7 +126,7 @@ NTSTATUS CMouseClass::InitIpc()
 	if (!m_hReq)
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "Failed to create req event, GetLastError() = " << dwError;
+		// PLOG_FATAL << "Failed to create req event, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
@@ -132,7 +134,7 @@ NTSTATUS CMouseClass::InitIpc()
 	if (!m_hAck)
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "Failed to create ack event, GetLastError() = " << dwError;
+		// PLOG_FATAL << "Failed to create ack event, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
@@ -149,7 +151,7 @@ NTSTATUS CMouseClass::InitIpc()
 	if (!IsProcessInJob(GetCurrentProcess(), nullptr, &bIsProcessInJob))
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "IsProcessInJob, GetLastError() = " << dwError;
+		// PLOG_FATAL << "IsProcessInJob, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
@@ -164,7 +166,7 @@ NTSTATUS CMouseClass::InitIpc()
 		buffer, nullptr, nullptr, TRUE, dwCreationFlags, nullptr, nullptr, &si, &pi))
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "Failed to spawn IPC server, GetLastError() = " << dwError;
+		// PLOG_FATAL << "Failed to spawn IPC server, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
@@ -172,7 +174,7 @@ NTSTATUS CMouseClass::InitIpc()
 	if (!m_hJob)
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "Failed to create job object, GetLastError() = " << dwError;
+		// PLOG_FATAL << "Failed to create job object, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
@@ -182,14 +184,14 @@ NTSTATUS CMouseClass::InitIpc()
 		JobObjectExtendedLimitInformation, &jeli, sizeof jeli))
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "SetInformationJobObject, GetLastError() = " << dwError;
+		// PLOG_FATAL << "SetInformationJobObject, GetLastError() = " << dwError;
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
 
 	if (!AssignProcessToJobObject(m_hJob, pi.hProcess))
 	{
 		dwError = GetLastError();
-		PLOG_FATAL << "AssignProcessToJobObject, GetLastError() = " << dwError;
+		// PLOG_FATAL << "AssignProcessToJobObject, GetLastError() = " << dwError;
 
 		return __NTSTATUS_FROM_WIN32(dwError);
 	}
@@ -198,7 +200,7 @@ NTSTATUS CMouseClass::InitIpc()
 
 	m_hIpcProc = pi.hProcess;
 
-	PLOG_INFO << "Spawned IPC server with pid " << pi.dwProcessId;
+	// PLOG_INFO << "Spawned IPC server with pid " << pi.dwProcessId;
 
 	m_bIpcReady = TRUE;
 	return STATUS_SUCCESS;
@@ -223,7 +225,7 @@ NTSTATUS CMouseClass::ProcessRequest(PBLEEDBLACK_INPUT_REQUEST pRequest) const
 		// TODO Check if IPC process is alive
 		const auto dwResult = WaitForSingleObject(m_hAck, 2000);
 		if (dwResult != WAIT_OBJECT_0)
-			PLOG_WARNING << "Waiting for ack has failed, dwResult = " << dwResult;
+			// PLOG_WARNING << "Waiting for ack has failed, dwResult = " << dwResult;
 		
 		LeaveCriticalSection(const_cast<PCRITICAL_SECTION>(&m_cs));
 		ResetEvent(m_hAck);

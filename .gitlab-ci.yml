@@ -1,43 +1,96 @@
 stages:
   - build
   - sign
+  - release
 
-cache:
+build:
+ image: cr.gluon.hu/mihaly/vsbuildtools:2022-wdk
+ needs: []
+ stage: build
+ cache:
   key: ${CI_COMMIT_REF_SLUG}
   paths:
-    - bleedblack/vcpkg_installed
-    - blipcsrv/vcpkg_installed
-
-build_windows:
-  stage: build
-  artifacts:
-    untracked: true
-  image: cr.gluon.hu/mihaly/buildtools2019:wdk
-  script:
-    - nuget.exe restore
-    - msbuild -p:Configuration=Release -p:Platform=x64 -r -m
-  tags:
-    - windows
-  variables:
-      GIT_SUBMODULE_STRATEGY: recursive
+   - bleedblack/x64
+   - blipcsrv/x64
+   - driver/bleedblack/x64
+   - examples/cpp/BleedBlackCpp/x64
+   - examples/csharp/BleedBlackCSharp/obj
+   - managed/bleedblack.net/obj
+ script: 
+  - msbuild bleedblack.sln -t:bleedblack,blipcsrv,driver\bleedblack,examples\cpp\BleedblackCpp -p:Configuration=Release -p:Platform=x64 -r -m
+  - msbuild bleedblack.sln -t:managed\bleedblack_net,examples\csharp\BleedblackCSharp -p:Configuration=Release -p:Platform=x64 -r -m
+ artifacts:
+  name: "${CI_PROJECT_NAME}_rawbuild_${CI_BUILD_REF_NAME}_${CI_COMMIT_SHORT_SHA}_${CI_JOB_ID}"
+  expire_in: 1 week
+  paths:
+   - exec/x64_release
+   - managed/bleedblack.net/bin/Release/netstandard2.0
+   - examples\csharp\BleedBlackCSharp\bin\Release
+ tags: 
+  - windows
+ variables:
+   GIT_SUBMODULE_STRATEGY: recursive
 
 sign:
-  stage: sign
-  image: cr.gluon.hu/mihaly/osslsigncode:latest
-  artifacts:
-    name: "${CI_PROJECT_NAME}_${CI_BUILD_REF_NAME}_${CI_COMMIT_SHORT_SHA}_${CI_JOB_ID}"
-    paths:
-      - x64/Release
-      - examples/csharp/BleedBlackCSharp/bin/Release
-    expire_in: 1 week
-  dependencies: 
-    - build_windows
-  script:
-    - |
-      curl --output certino.zip --location --header "PRIVATE-TOKEN: $CERTINO_PROJECT_TOKEN" "$CI_API_V4_URL/projects/$CERTINO_PROJECT_ID/jobs/artifacts/main/download?job=package"
-      unzip certino.zip -d certino
-      osslsigncode sign -ac certino/bundle/ca.cer -certs certino/bundle/cert.crt -key certino/bundle/pvk.key -h sha256 -in x64/Release/bleedblack.sys -out x64/Release/bleedblack_signed.sys
-      rm x64/Release/bleedblack.sys
-      mv x64/Release/bleedblack_signed.sys x64/Release/bleedblack.sys
-  tags:
-    - linux
+ image: cr.gluon.hu/mihaly/osslsigncode:latest
+ stage: sign
+ variables:
+   SECURE_FILES_DOWNLOAD_PATH: './secure'
+ needs:
+  - job: build
+    artifacts: true
+ script:
+  - |
+    curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
+    unzip ./secure/certificates.zip -d ./secure/certificates
+    ls -la
+    osslsigncode sign -ac ./secure/certificates/bundle/ca.cer -certs ./secure/certificates/bundle/cert.crt -key ./secure/certificates/bundle/pvk.key -h sha256 -in exec/x64_release/bleedblack.sys -out bleedblack_signed.sys
+ artifacts:
+  name: "${CI_PROJECT_NAME}_driver_${CI_BUILD_REF_NAME}_${CI_COMMIT_SHORT_SHA}_${CI_JOB_ID}"
+  paths:
+   - bleedblack_signed.sys
+  expose_as: "signed driver"
+  expire_in: 1 week
+ tags: 
+  - linux
+
+package:
+ image: cr.gluon.hu/mihaly/vsbuildtools:2022-wdk
+ needs:
+  - job: build
+    artifacts: true
+  - job: sign
+    artifacts: true
+ stage: release
+ script:
+  - |
+    Remove-Item -Recurse -Force -Path .\release -ErrorAction SilentlyContinue
+    New-Item -Path .\release -ItemType Directory
+    Copy-Item -Path bleedblack_signed.sys .\release\bleedblack.sys
+
+    New-Item -Path .\release\include -ItemType Directory
+    Copy-Item -Recurse -Path .\include\bleedblack\ -Destination .\release\include
+
+    New-Item -Path .\release\examples -ItemType Directory
+    Copy-Item -Path .\exec\x64_release\bleedblack.dll .\release\examples
+    Copy-Item -Path .\managed\bleedblack.net\bin\Release\netstandard2.0\bleedblack.net.dll .\release\examples
+    Copy-Item -Path .\managed\KdlCore.Native.Commons\KdlCore.Native.Commons\bin\Release\netstandard2.0\KdlCore.Native.Commons.dll .\release\examples
+    Copy-Item -Path .\exec\x64_release\blipcsrv.exe .\release\examples
+    Copy-Item -Path .\exec\x64_release\BleedBlackCpp.exe .\release\examples
+    Copy-Item -Path .\examples\csharp\BleedBlackCSharp\bin\Release\BleedBlackCSharp.exe .\release\examples
+
+    New-Item -Path .\release\lib -ItemType Directory
+    Copy-Item -Path .\exec\x64_release\bleedblack.lib .\release\lib
+
+    Write-Output "Release ${env:CI_PROJECT_NAME}_SDK_${env:CI_BUILD_REF_NAME}_${env:CI_COMMIT_SHORT_SHA}_${env:CI_JOB_STARTED_AT} contents:"
+    Get-ChildItem -Recurse .\release
+ artifacts:
+  name: "${CI_PROJECT_NAME}_SDK_${CI_BUILD_REF_NAME}_${CI_COMMIT_SHORT_SHA}_${CI_JOB_STARTED_AT}"
+  paths:
+   - release
+  expose_as: "bleedblack sdk"
+  expire_in: 1 week
+ rules:
+  - when: manual
+ tags: 
+  - windows
