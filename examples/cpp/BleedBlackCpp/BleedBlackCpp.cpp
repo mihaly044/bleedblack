@@ -17,14 +17,9 @@
 
 HANDLE g_hBleedBlack = nullptr;
 
-void handle_exit()
-{
-	Bleedblack_Destroy(g_hBleedBlack);
-}
-
 auto main() -> int
 {
-	std::atexit(handle_exit);
+	std::atexit([]() -> void { Bleedblack_Destroy(g_hBleedBlack); });
 	
 	//
 	// Set up connection with the Bleedblack driver

@@ -6,17 +6,15 @@
 std::shared_ptr<BLIPCSRV_CTX> CommandLineToContext()
 {
 	auto *const commandLine = GetCommandLineW();
-	if (!commandLine)
-	{
-		PLOG_FATAL << "Could not get command line, GetLastError() = " << GetLastError();
+
+	if(!LOG_LAST_ERROR_IF_NULL_MSG(commandLine, "Could not get command line"))
 		return nullptr;
-	}
 
 	int argc;
 	auto* const argv = CommandLineToArgvW(commandLine, &argc);
 	if(argc != InputParamKindMax)
 	{
-		PLOG_FATAL << "Count of parameters seems invalid";
+		LOG_WIN32(ERROR_INVALID_PARAMETER);
 		return nullptr;
 	}
 
@@ -29,7 +27,7 @@ std::shared_ptr<BLIPCSRV_CTX> CommandLineToContext()
 		case ShmHandle: context->hShmMapping = handle; break;
 		case ReqHandle: context->hReq = handle; break;
 		case AckHandle: context->hAck = handle; break;
-		default: PLOG_WARNING.printf("Invalid handle. Type = %d Value = %08x", i, handle);
+		default: LOG_WIN32_MSG(ERROR_INVALID_PARAMETER, "Type = %d Value = %08x", i, handle);
 		}
 	}
 	

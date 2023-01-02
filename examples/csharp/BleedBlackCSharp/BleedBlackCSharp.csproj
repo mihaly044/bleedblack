@@ -67,7 +67,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>copy /b/v/y $(SolutionDir)x64\$(ConfigurationName)\bleedblack.dll $(TargetDir)bleedblack.dll
-copy /b/v/y $(SolutionDir)x64\$(ConfigurationName)\blipcsrv.exe $(TargetDir)blipcsrv.exe</PostBuildEvent>
+    <PostBuildEvent>copy /b/v/y $(SolutionDir)exec\x64_$(Configuration.ToLower())\bleedblack.dll $(TargetDir)bleedblack.dll
+copy /b/v/y $(SolutionDir)exec\x64_$(Configuration.ToLower())\blipcsrv.exe $(TargetDir)blipcsrv.exe</PostBuildEvent>
   </PropertyGroup>
 </Project>

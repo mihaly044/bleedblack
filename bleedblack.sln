@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30717.126
+# Visual Studio Version 17
+VisualStudioVersion = 17.4.33205.214
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "driver", "driver", "{B1E66E62-8E97-49C3-8A6A-328714ED5511}"
 EndProject
@@ -52,6 +52,36 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BleedBlackCSharp", "example
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "blipcsrv", "blipcsrv\blipcsrv.vcxproj", "{B818A0DA-DE54-470B-82D7-83E5C891274C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "wil", "wil", "{9E69C3D1-0D09-456D-9B28-FA4559F916C0}"
+	ProjectSection(SolutionItems) = preProject
+		include\wil\include\wil\com.h = include\wil\include\wil\com.h
+		include\wil\include\wil\common.h = include\wil\include\wil\common.h
+		include\wil\include\wil\com_apartment_variable.h = include\wil\include\wil\com_apartment_variable.h
+		include\wil\include\wil\cppwinrt.h = include\wil\include\wil\cppwinrt.h
+		include\wil\include\wil\cppwinrt_helpers.h = include\wil\include\wil\cppwinrt_helpers.h
+		include\wil\include\wil\cppwinrt_wrl.h = include\wil\include\wil\cppwinrt_wrl.h
+		include\wil\include\wil\filesystem.h = include\wil\include\wil\filesystem.h
+		include\wil\include\wil\nt_result_macros.h = include\wil\include\wil\nt_result_macros.h
+		include\wil\include\wil\registry.h = include\wil\include\wil\registry.h
+		include\wil\include\wil\resource.h = include\wil\include\wil\resource.h
+		include\wil\include\wil\result.h = include\wil\include\wil\result.h
+		include\wil\include\wil\result_macros.h = include\wil\include\wil\result_macros.h
+		include\wil\include\wil\result_originate.h = include\wil\include\wil\result_originate.h
+		include\wil\include\wil\rpc_helpers.h = include\wil\include\wil\rpc_helpers.h
+		include\wil\include\wil\safecast.h = include\wil\include\wil\safecast.h
+		include\wil\include\wil\stl.h = include\wil\include\wil\stl.h
+		include\wil\include\wil\token_helpers.h = include\wil\include\wil\token_helpers.h
+		include\wil\include\wil\Tracelogging.h = include\wil\include\wil\Tracelogging.h
+		include\wil\include\wil\traceloggingconfig.h = include\wil\include\wil\traceloggingconfig.h
+		include\wil\include\wil\win32_helpers.h = include\wil\include\wil\win32_helpers.h
+		include\wil\include\wil\winrt.h = include\wil\include\wil\winrt.h
+		include\wil\include\wil\wistd_config.h = include\wil\include\wil\wistd_config.h
+		include\wil\include\wil\wistd_functional.h = include\wil\include\wil\wistd_functional.h
+		include\wil\include\wil\wistd_memory.h = include\wil\include\wil\wistd_memory.h
+		include\wil\include\wil\wistd_type_traits.h = include\wil\include\wil\wistd_type_traits.h
+		include\wil\include\wil\wrl.h = include\wil\include\wil\wrl.h
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -67,15 +97,11 @@ Global
 		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Debug|x64.Build.0 = Debug|x64
 		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Debug|x64.Deploy.0 = Debug|x64
 		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Debug|x86.ActiveCfg = Debug|Win32
-		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Debug|x86.Build.0 = Debug|Win32
-		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Debug|x86.Deploy.0 = Debug|Win32
 		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Release|Any CPU.ActiveCfg = Release|Win32
 		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Release|x64.ActiveCfg = Release|x64
 		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Release|x64.Build.0 = Release|x64
 		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Release|x64.Deploy.0 = Release|x64
 		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Release|x86.ActiveCfg = Release|Win32
-		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Release|x86.Build.0 = Release|Win32
-		{C0956810-2F8B-4A10-BBB7-FD3F68F168A9}.Release|x86.Deploy.0 = Release|Win32
 		{DC6EA5B3-31BF-44E7-8F04-9364E637A314}.Debug|Any CPU.ActiveCfg = Debug|Win32
 		{DC6EA5B3-31BF-44E7-8F04-9364E637A314}.Debug|x64.ActiveCfg = Debug|x64
 		{DC6EA5B3-31BF-44E7-8F04-9364E637A314}.Debug|x64.Build.0 = Debug|x64
@@ -156,6 +182,7 @@ Global
 		{DCDCCF92-89C1-4C21-B409-970CD0CF2D4E} = {1F2B2186-9FB8-4BCB-AA7D-B5042255861D}
 		{A78B3DE5-B04C-453D-B2B9-DC638FD833C7} = {61CBAC4E-49F5-49AC-8DCA-57A21DABC8DD}
 		{0D03D4AD-B834-4BA3-A500-79F7429C5FF5} = {A78B3DE5-B04C-453D-B2B9-DC638FD833C7}
+		{9E69C3D1-0D09-456D-9B28-FA4559F916C0} = {8DE92034-5033-4BA1-8CB6-697087592677}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {13BBADC7-0463-4BE3-8978-57E317675828}
