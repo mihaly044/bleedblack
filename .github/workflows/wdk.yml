@@ -19,7 +19,7 @@ jobs:
 
       - name: Build solution
         run: |
-          msbuild bleedblack.sln -t:bleedblack,driver\bleedblack,examples\c\BleedblackDirectIo,examples\cpp\BleedblackCpp -p:Configuration:${{ env.Configuration }} -p:Platform:${{ env.Platform }} -r -m
+          msbuild bleedblack.sln -t:bleedblack,driver\bleedblack,examples\c\BleedblackDirectIo,examples\cpp\BleedblackCpp -p:Configuration=${{ env.Configuration }} -p:Platform=${{ env.Platform }} -r -m
         env:
           Configuration: ${{ matrix.configuration }}
           Platform: ${{ matrix.platform }}
