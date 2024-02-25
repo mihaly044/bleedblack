@@ -1,0 +1,25 @@
+name: WDK
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    strategy:
+      matrix:
+        configuration: [Release]
+        platform: [x64]
+    runs-on: windows-2022
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v3
+
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.2
+
+      - name: Build solution
+        run: |
+          msbuild bleedblack.sln -t:bleedblack,driver\bleedblack,examples\c\BleedblackDirectIo,examples\cpp\BleedblackCpp -p:Configuration:${{ env.Configuration }} -p:Platform:${{ env.Platform }} -r -m
+        env:
+          Configuration: ${{ matrix.configuration }}
+          Platform: ${{ matrix.platform }}
