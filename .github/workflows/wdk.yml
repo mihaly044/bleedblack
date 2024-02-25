@@ -20,10 +20,17 @@ jobs:
         uses: microsoft/setup-msbuild@v1.0.2
 
       - name: Build solution
-        run: |
-          msbuild bleedblack.sln -t:bleedblack,blipcsrv,driver\bleedblack,examples\cpp\BleedblackCpp  -p:Configuration=${{ env.Configuration }} -p:Platform=${{ env.Platform }} -r -m
-          msbuild bleedblack.sln -t:managed\bleedblack_net,examples\csharp\BleedblackCSharp  -p:Configuration=${{ env.Configuration }} -p:Platform=${{ env.Platform }} -r -m
-
+        run: msbuild ${{ env.Solution_Path }} -p:Configuration=${{ env.Configuration }} -p:Platform=${{ env.Platform }} -r -m
         env:
           Configuration: ${{ matrix.configuration }}
           Platform: ${{ matrix.platform }}
+          Solution_Path: bleedblack.sln
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ${{ matrix.configuration }}-${{ matrix.platform }}
+          path: |
+            exec/${{ matrix.platform }}_${{ matrix.configuration }}
+            managed/bleedblack.net/bin/${{ matrix.configuration }}/netstandard2.0
+            examples/csharp/BleedBlackCSharp/bin/${{ matrix.configuration }}
